@@ -23,7 +23,7 @@ import java.io.FilenameFilter;
  */
 
 /**
- *
+ * Testkommentar
  */
 public class Foto {
     private File file;
