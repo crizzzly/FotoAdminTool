@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 
+
 /**
  * reads the directory, saves all the fotos in an arrayList, saves all the paths in a seperate arrayList.
  * every foto which was taken within a given time will be pulled in a seperate folder.
@@ -13,6 +14,8 @@ import java.util.Date;
  * Created by Chrissi on 11.05.2017.
  */
 public class Test {
+
+    //Dies ist ein Testii
 
     public static void main(String[] args) {
         //arraylist where the fotos are saved
