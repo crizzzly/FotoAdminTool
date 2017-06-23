@@ -15,7 +15,7 @@ import java.util.Date;
  */
 public class Test {
 
-    //Dies ist ein Testii
+    //Dies ist ein Testiii
 
     public static void main(String[] args) {
         //arraylist where the fotos are saved
