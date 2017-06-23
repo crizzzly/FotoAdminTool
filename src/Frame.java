@@ -5,15 +5,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Vector;
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileSystemView;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.TreePath;
+import javax.swing.text.Position;
+import javax.swing.tree.*;
 
 
 /**
@@ -126,6 +126,7 @@ public class Frame extends JFrame implements ActionListener {
 
                 button.setActionCommand("folder");
                 button.addActionListener(this);
+
                 //labels.add(button);
 
             }
@@ -159,6 +160,7 @@ public class Frame extends JFrame implements ActionListener {
 
         }
         pack();
+
         cPanel.validate();
         cPanel.repaint();
         // }
@@ -199,7 +201,7 @@ public class Frame extends JFrame implements ActionListener {
                 //opens the pop up window to search through the local stored folders.
                 JFileChooser fc = new JFileChooser();
                 //first directory shown when the file chooser window is opened
-                fc.setCurrentDirectory(new File("C:\\Users\\USERNAME\\Pictures"));
+                fc.setCurrentDirectory(new File("C:\\Users\\" + System.getProperty("user.name") + "\\Pictures"));
                 //implements a new FileFilter (function below)
                 fc.setFileFilter(new MyFileFilter());
                 //directories_only important because else you would choose files instead of dirs
@@ -210,7 +212,7 @@ public class Frame extends JFrame implements ActionListener {
                     // sourcheDirSet = true;
                     //show the new content in the treeScrollPane
 
-                    //fileTree.setSelectedTreeNode(selected.toString());
+                    fileTree.setSelectedTreeNode(selected.getAbsolutePath());
                     buildContent(selected);
                 }
             }
@@ -320,7 +322,7 @@ public class Frame extends JFrame implements ActionListener {
                 String thisObject = (String) ol.elementAt(i);
                 String newPath;
                 if (curPath.equals("."))
-                    newPath = thisObject;
+                    newPath = thisObject.getClass().getName();
                 else
                     newPath = curPath + File.separator + thisObject;
                 if ((f = new File(newPath)).isDirectory())
@@ -335,15 +337,21 @@ public class Frame extends JFrame implements ActionListener {
         }
 
         public Dimension getMinimumSize() {
-            return new Dimension(200, 400);
+            return new Dimension(300, 400);
         }
 
         public Dimension getPreferredSize() {
-            return new Dimension(200, 800);
+            return new Dimension(300, 800);
         }
 
         public void setSelectedTreeNode(String path) {
-            tree.setSelectionPath(new TreePath(path));
+            // Search forward from first visible row looking for any visible node
+            // whose name starts with prefix.
+            int startRow = 0;
+            String prefix = path;
+            TreePath tPath = tree.getNextMatch(prefix, startRow, Position.Bias.Forward);
+            tree.setSelectionPath(tPath);
+            tree.expandPath(tPath);
         }
 
 
@@ -360,11 +368,11 @@ public class Frame extends JFrame implements ActionListener {
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
                     Object userValue = node.getUserObject();
 
-                /*value = ((DefaultMutableTreeNode) value).getUserObject();
+                    value = ((DefaultMutableTreeNode) value).getUserObject();
                 if (value instanceof File) {
                 File file = (File) value;
-                /*
-                if (file.isDirectory()) {
+
+                    if (file.isDirectory()) {
                     setIcon(fsv.getSystemIcon(file));
                     setText(file.getName());
                 } else {
@@ -374,7 +382,7 @@ public class Frame extends JFrame implements ActionListener {
                     setIcon(fsv.getSystemIcon(file));
                     setText(file.getName());
                     //setText(((File) value).getName());
-                }*/
+                }
 
                 }
                 return this;
