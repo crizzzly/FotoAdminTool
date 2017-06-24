@@ -9,7 +9,9 @@ import com.drew.metadata.exif.ExifSubIFDDirectory;
 
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileFilter;
@@ -27,6 +29,8 @@ import java.io.FilenameFilter;
  */
 public class Foto {
     private File file;
+    private ImageIcon image;
+    private Image thumbnail;
     private File dir;
     private File newDir;
     private Metadata meta;
@@ -48,6 +52,10 @@ public class Foto {
     public Foto(String path, String fileName) {
         dir = new File(path);
         file = new File(dir, fileName);
+        //image = Toolkit.getDefaultToolkit().getImage(path+fileName);
+        image = new ImageIcon(path + fileName);
+        thumbnail = Toolkit.getDefaultToolkit().getImage(path + fileName)
+                .getScaledInstance((int) ((image.getIconWidth() * 1.5) / 100) + 1, (int) ((image.getIconHeight() * 1.5) / 100) + 1, Image.SCALE_SMOOTH);
         try {
             //checks if file is *jpg oder *jpeg. if it is so, it reads the metadata of the file.
             if (file.getName().toLowerCase().endsWith(".jpg") || file.getName().toLowerCase().endsWith(".jpeg")) {
@@ -80,6 +88,10 @@ public class Foto {
         file = new File(dir, fileName);
         this.id = id;
 
+        image = new ImageIcon(path + fileName);
+        thumbnail = Toolkit.getDefaultToolkit().getImage(path + fileName)
+                .getScaledInstance((int) ((image.getIconWidth() * 1.5) / 100) + 1, (int) ((image.getIconHeight() * 1.5) / 100) + 1, Image.SCALE_SMOOTH);
+
         try {
             meta = ImageMetadataReader.readMetadata(file);
             //showMetadata();
@@ -96,9 +108,13 @@ public class Foto {
      * creates new instance of class "foto" on base of path and filename of the foto.
      * checks if file is a foto (jpg or jpeg), reads metadata and saves it as Metadata.
      */
-    public Foto() {
-        file = new File("C:\\Users\\Chrissi\\Pictures\\imagesTest\\1-111.jpg");
+    public Foto(File file) {
+        this.file = file;
         dir = file.getParentFile();
+
+        image = new ImageIcon(file.getAbsolutePath());
+        thumbnail = Toolkit.getDefaultToolkit().getImage(file.getAbsolutePath())
+                .getScaledInstance((int) ((image.getIconWidth() * 1.5) / 100) + 1, (int) ((image.getIconHeight() * 1.5) / 100) + 1, Image.SCALE_SMOOTH);
 
         //dir = new File("C:/Users/Chrissi/Pictures/imagesTest");
         /*
@@ -122,12 +138,42 @@ public class Foto {
 
     }
 
+    public Foto(String filename) {
+        //
+        //
+        // System.out.println(path.toString()+ filename);
+        file = new File(filename);//"C:\\Users\\Chrissi\\Pictures\\imagesTest\\1-111.jpg");
+        dir = file.getParentFile();
+
+        image = new ImageIcon(filename);
+        thumbnail = Toolkit.getDefaultToolkit().getImage(filename)
+                .getScaledInstance((int) ((image.getIconWidth() * 1.5) / 100) + 1, (int) ((image.getIconHeight() * 1.5) / 100) + 1, Image.SCALE_SMOOTH);
+
+
+        try {
+            meta = ImageMetadataReader.readMetadata(file);
+            //showMetadata();
+
+        } catch (ImageProcessingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("Constructor implementing meta: ");
+            e.printStackTrace();
+        }
+
+    }
+
     public Foto(File path, String filename) {
         //
         //
         // System.out.println(path.toString()+ filename);
         file = new File(path, filename);//"C:\\Users\\Chrissi\\Pictures\\imagesTest\\1-111.jpg");
         dir = file.getParentFile();
+
+        image = new ImageIcon(path.toString() + "" + filename);
+        thumbnail = Toolkit.getDefaultToolkit().getImage(path + filename)
+                .getScaledInstance((int) ((image.getIconWidth() * 1.5) / 100) + 1, (int) ((image.getIconHeight() * 1.5) / 100) + 1, Image.SCALE_SMOOTH);
+
         //dir = new File("C:/Users/Chrissi/Pictures/imagesTest");
         /*
         try {
@@ -166,6 +212,13 @@ public class Foto {
     }
     */
 
+    public ImageIcon getThumbnail() {
+        return new ImageIcon(thumbnail);
+    }
+
+    public Image getImage() {
+        return Toolkit.getDefaultToolkit().getImage(image.getAccessibleContext().toString());
+    }
     /**
      * moves file to given path
      *
