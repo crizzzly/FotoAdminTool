@@ -70,7 +70,7 @@ public class Frame extends JFrame implements ActionListener {
         buildFileTree();
         //if (fileTree.getSelected() != null)
         buildContentViewer(null);
-        buildProgressBar();
+        //buildProgressBar();
 
 
         pack();
@@ -182,6 +182,8 @@ public class Frame extends JFrame implements ActionListener {
 
         File[] content = selected.listFiles();
         int i = 1;
+        //in the next line you can find the information needed for building the progress bar.
+        // here you can make the call to buildProgressBar()
         System.out.println("number of files/folders in selected item: " + (content != null ? content.length : 0));
         assert content != null;
         for (File aContent : selected.listFiles()) {
