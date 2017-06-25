@@ -101,6 +101,13 @@ public class Frame extends JFrame implements ActionListener {
         cPanel.setLayout(new FlowLayout());
         cPanel.setPreferredSize(new Dimension(900, 800));
 
+        //----
+
+        cPanel.setBackground(Color.DARK_GRAY);
+        cPanel.setForeground(Color.WHITE);
+
+        //----
+
         //returnms the last selected item of the fileTree
         if (selected != null) buildContent(selected);
 
@@ -238,17 +245,68 @@ public class Frame extends JFrame implements ActionListener {
      * creates a button to set up the location of the folder you want to sort.
      */
     private void buildToolbar() {
+       // JToolBar bar = new JToolBar();
+
+
+        //---
+
+
+        // Erstellung einer Menüleiste
+        JMenuBar menu = new JMenuBar();
+        // Menü wird hinzugefügt
+        menu.add(new JMenu("Datei"));
+
+
+
+
+
+        //Toolbar wird erstellt
         JToolBar bar = new JToolBar();
+        //Größe der Toolbar wird gesetzt
+        bar.setSize(230, 20);
+
+        bar.setBackground(Color.DARK_GRAY);
+        bar.setForeground(Color.WHITE);
+
+        //----
+
         bar.setFloatable(false);
         c.add(bar, BorderLayout.NORTH);
         //new JButton, which image is located in the src-folder
+
+        //---
         JButton chooseFolder = new JButton(new ImageIcon(getClass().getResource("folder.png")));
+        JButton bearbeiten = new JButton("Bearbeiten");
+        JButton hilfe = new JButton("Hilfe");
+
+        chooseFolder.setBackground(Color.DARK_GRAY);
+        chooseFolder.setForeground(Color.WHITE);
+
+        bearbeiten.setBackground(Color.DARK_GRAY);
+        bearbeiten.setForeground(Color.WHITE);
+
+        hilfe.setBackground(Color.DARK_GRAY);
+        hilfe.setForeground(Color.WHITE);
+
+
+
         chooseFolder.setToolTipText("set the location of the folder you want to sort");
+
         //if you use setActionCommand you don't have to write one actionListener for each actionEvent.
         chooseFolder.setActionCommand("chooseFolder");
+        bearbeiten.setActionCommand("Bearbeiten");
+        hilfe.setActionCommand("Hilfe");
+
         chooseFolder.addActionListener(this);
         bar.add(chooseFolder);
+
+        bearbeiten.addActionListener(this);
+        bar.add(bearbeiten);
+
+        hilfe.addActionListener(this);
+        bar.add(hilfe);
     }
+    //----
 
     public void actionPerformed(ActionEvent e) {
         Object obj = e.getSource();
@@ -358,6 +416,10 @@ public class Frame extends JFrame implements ActionListener {
                     //printAll(getGraphics());
                 }
             });
+//----
+            tree.setBackground(Color.DARK_GRAY);
+            tree.setForeground(Color.WHITE);
+//----
 
             // Lastly, put the JTree into a JScrollPane.
             //JScrollPane scrollPane = new JScrollPane();
