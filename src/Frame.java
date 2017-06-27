@@ -4,15 +4,13 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Vector;
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.event.TreeSelectionListener;
-import javax.swing.filechooser.FileSystemView;
 import javax.swing.text.Position;
 import javax.swing.tree.*;
 
@@ -46,6 +44,8 @@ public class Frame extends JFrame implements ActionListener {
     private JPanel cPanel;
     private JScrollPane contentPanel;
     private JList listContent;
+    private ArrayList<ImageIcon> thumbnails;
+    private ArrayList<File> content;
     private ListModel listModel;
 
     private File selected = null;
@@ -101,7 +101,7 @@ public class Frame extends JFrame implements ActionListener {
         cPanel.setLayout(new FlowLayout());
         cPanel.setPreferredSize(new Dimension(900, 800));
 
-        //----
+        //---- change appearance of contentPanel
 
         cPanel.setBackground(Color.DARK_GRAY);
         cPanel.setForeground(Color.WHITE);
@@ -123,39 +123,56 @@ public class Frame extends JFrame implements ActionListener {
 
     // class Content
     private void buildContent(File selected) {
+
         cPanel.removeAll();
-        /*
-        Foto[] content = new Foto[(int)selected.length()];
-        //creates a listmodel for storing the icons shown in contentPane
+        content = new ArrayList<>(); //new File[(int)selected.length()];
+        thumbnails = new ArrayList<>();//new ImageIcon[(int)selected.length()];
 
+
+        int count = 0;
+        for (File file : selected.listFiles()) {
+            //creates a File and puts it  in the array of content-files
+            content.add(new File(file.getAbsolutePath()));
+
+            //if file is directory, an image of a directory will be pushed in the array of thumbnails on the same position as the file is
+            if (file.isDirectory()) {
+                thumbnails.add(new ImageIcon(getClass().getResource("folder.png")));
+            }
+            //if file is an image (jpg) it creates a Foto, gets the thumbnail of it an pushes it into the array of thumbnails
+            else if (file.isFile() && (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg"))) {
+                Foto foto = new Foto(file.getAbsolutePath());
+                thumbnails.add(foto.getThumbnail());
+            } else {
+                thumbnails.add(new ImageIcon(getClass().getResource("picture.png")));
+            }
+            count++;
+        }
+
+
+        listContent = new JList<>();
+        listContent.setListData(content.toArray());
+        //listContent.setListData();
         listModel = new DefaultListModel();
-
-
-          //  content[] = selected.list();
-
-
-        listContent = new JList<>(content);
-        listContent.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+        //setup for selection mode: Multiple Intervall means you can select one or more items
+        // no matter if there is one non-selected between them
+        listContent.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         listContent.setLayoutOrientation(JList.HORIZONTAL_WRAP);
-        listContent.addListSelectionListener((ListSelectionListener) this);
+        //listContent.setLayoutOrientation(JList.HORIZONTAL_WRAP);
+        // listContent.addListSelectionListener((ListSelectionListener) this);
         //the call to setLayoutOrientation, invoking setVisibleRowCount(-1)
         // makes the list display the maximum number of items possible in the available space
         listContent.setVisibleRowCount(-1);
-        /*ListSelectionModel listSelectionModel = list.getSelectionModel();
-        listSelectionModel.addListSelectionListener(
-                new SharedListSelectionHandler());
+        ListSelectionModel listSelectionModel = listContent.getSelectionModel();
+        //listSelectionModel.addListSelectionListener(new SharedListSelectionHandler());
 
-        contentPanel = new JScrollPane(listContent);
 
         // Display an icon and a string for each object in the list.
 
         class MyCellRenderer extends JLabel implements ListCellRenderer<Object> {
-            final  ImageIcon longIcon = new ImageIcon("long.gif");
-            final  ImageIcon shortIcon = new ImageIcon("short.gif");
 
             // This is the only method defined by ListCellRenderer.
             // We just reconfigure the JLabel each time we're called.
-
+            @Override
             public Component getListCellRendererComponent(
                     JList<?> list,           // the list
                     Object value,            // value to display
@@ -163,14 +180,13 @@ public class Frame extends JFrame implements ActionListener {
                     boolean isSelected,      // is the cell selected
                     boolean cellHasFocus)    // does the cell have focus
             {
-                String s = value.toString();
-                setText(s);
-                //setIcon(list.getModel().getElementAt(index).getClass().);
+                setText(content.get(index).getName());
+                setIcon(thumbnails.get(index));
                 if (isSelected) {
                     setBackground(list.getSelectionBackground());
                     setForeground(list.getSelectionForeground());
                 } else {
-                    setBackground(list.getBackground());
+                    setBackground(Color.DARK_GRAY);
                     setForeground(list.getForeground());
                 }
                 setEnabled(list.isEnabled());
@@ -179,64 +195,24 @@ public class Frame extends JFrame implements ActionListener {
                 return this;
             }
         }
+        ListCellRenderer<Object> renderer = new MyCellRenderer();
+        listContent.setCellRenderer(renderer);
+        //listContent.setCellRenderer(new MyCellRenderer());
 
-        listContent.setCellRenderer(new MyCellRenderer());
-
-*/
-
-        Foto foto;
-        ImageIcon thumbnail;
-
-        File[] content = selected.listFiles();
-        int i = 1;
-        //in the next line you can find the information needed for building the progress bar.
-        // here you can make the call to buildProgressBar()
-        System.out.println("number of files/folders in selected item: " + (content != null ? content.length : 0));
-        assert content != null;
-        for (File aContent : selected.listFiles()) {
-            System.out.println("picture " + i + "of " + content.length + " loaded. ");
-            i++;
-            ImageIcon icon = null;
-            JButton button = null;
-
-            if (aContent.isDirectory()) {
-                icon = new ImageIcon(getClass().getResource("folder.png"));
-                button = new JButton(aContent.getName(), icon);
-
-                button.setActionCommand("folder");
-                button.addActionListener(this);
-
-                //labels.add(button);
-
-            }
-            //use thumbnail instead:
-            else {
-                if (aContent.getName().toLowerCase().endsWith("jpg") || aContent.getName().toLowerCase().endsWith("jpeg")) {
-                    foto = new Foto(aContent.getAbsolutePath());
-                    thumbnail = foto.getThumbnail();
-
-
-                } else {
-                    thumbnail = new ImageIcon(getClass().getResource("picture.png"));
-                }
-                button = new JButton(aContent.getName(), thumbnail);
-                button.setHorizontalTextPosition(AbstractButton.CENTER);
-                button.setVerticalTextPosition(AbstractButton.BOTTOM);
-                button.setActionCommand("picture");
-                button.addActionListener(this);
-                //labels.add(button);
-            }
-
-
-            cPanel.add(button);
-
-        }
+        cPanel.add(listContent);
         pack();
 
         cPanel.validate();
         cPanel.repaint();
-        // }
+
     }
+
+
+
+
+
+
+
 
 
     /**
@@ -438,16 +414,16 @@ public class Frame extends JFrame implements ActionListener {
             if (curTop != null) { // should only be null at root
                 curTop.add(curDir);
             }
-            Vector ol = new Vector();
+            Vector<String> ol = new Vector<>();
             String[] tmp = dir.list();
             for (int i = 0; i < tmp.length; i++)
                 ol.addElement(tmp[i]);
             Collections.sort(ol, String.CASE_INSENSITIVE_ORDER);
             File f;
-            Vector files = new Vector();
+            Vector<String> files = new Vector<String>();
             // Make two passes, one for Dirs and one for Files. This is #1.
             for (int i = 0; i < ol.size(); i++) {
-                String thisObject = (String) ol.elementAt(i);
+                String thisObject = ol.elementAt(i);
                 String newPath;
                 if (curPath.equals("."))
                     newPath = thisObject.getClass().getName();
