@@ -97,68 +97,18 @@ public class Frame extends JFrame implements ActionListener {
      */
     private void buildContentViewer(File selected) {
         //ArrayList<JButton> labels = new ArrayList<>();
-        cPanel = new JPanel();
-        cPanel.setLayout(new FlowLayout());
-        cPanel.setPreferredSize(new Dimension(900, 800));
+        //cPanel = new JPanel();
+        //cPanel.setLayout(new FlowLayout());
 
-        //---- change appearance of contentPanel
-
-        cPanel.setBackground(Color.DARK_GRAY);
-        cPanel.setForeground(Color.WHITE);
-
-        //----
 
         //returnms the last selected item of the fileTree
         if (selected != null) buildContent(selected);
 
-        pack();
-        cPanel.validate();
-        cPanel.repaint();
-        contentPanel = new JScrollPane(cPanel);
-        contentPanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        contentPanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        c.add(contentPanel, BorderLayout.CENTER);
-    }
-
-
-    // class Content
-    private void buildContent(File selected) {
-
-        cPanel.removeAll();
-        content = new ArrayList<>(); //new File[(int)selected.length()];
-        thumbnails = new ArrayList<>();//new ImageIcon[(int)selected.length()];
-
-
-        int count = 0;
-        for (File file : selected.listFiles()) {
-            //creates a File and puts it  in the array of content-files
-            content.add(new File(file.getAbsolutePath()));
-
-            //if file is directory, an image of a directory will be pushed in the array of thumbnails on the same position as the file is
-            if (file.isDirectory()) {
-                thumbnails.add(new ImageIcon(getClass().getResource("folder.png")));
-            }
-            //if file is an image (jpg) it creates a Foto, gets the thumbnail of it an pushes it into the array of thumbnails
-            else if (file.isFile() && (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg"))) {
-                Foto foto = new Foto(file.getAbsolutePath());
-                thumbnails.add(foto.getThumbnail());
-            } else {
-                thumbnails.add(new ImageIcon(getClass().getResource("picture.png")));
-            }
-            count++;
-        }
-
 
         listContent = new JList<>();
-        listContent.setListData(content.toArray());
         //listContent.setListData();
         listModel = new DefaultListModel();
-        //setup for selection mode: Multiple Intervall means you can select one or more items
-        // no matter if there is one non-selected between them
-        listContent.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        listContent.setLayoutOrientation(JList.HORIZONTAL_WRAP);
-        //listContent.setLayoutOrientation(JList.HORIZONTAL_WRAP);
-        // listContent.addListSelectionListener((ListSelectionListener) this);
+
         //the call to setLayoutOrientation, invoking setVisibleRowCount(-1)
         // makes the list display the maximum number of items possible in the available space
         listContent.setVisibleRowCount(-1);
@@ -166,8 +116,18 @@ public class Frame extends JFrame implements ActionListener {
         //listSelectionModel.addListSelectionListener(new SharedListSelectionHandler());
 
 
-        // Display an icon and a string for each object in the list.
+        //setup for selection mode: Multiple Intervall means you can select one or more items
+        // no matter if there is one non-selected between them
+        listContent.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        listContent.setLayoutOrientation(JList.HORIZONTAL_WRAP);
+        // listContent.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+        // listContent.addListSelectionListener((ListSelectionListener) this);
 
+        //the call to setLayoutOrientation, invoking setVisibleRowCount(-1)
+        // makes the list display the maximum number of items possible in the available space
+        //listSelectionModel.addListSelectionListener(new SharedListSelectionHandler());
+
+        // Display an icon and a string for each object in the list.
         class MyCellRenderer extends JLabel implements ListCellRenderer<Object> {
 
             // This is the only method defined by ListCellRenderer.
@@ -197,13 +157,68 @@ public class Frame extends JFrame implements ActionListener {
         }
         ListCellRenderer<Object> renderer = new MyCellRenderer();
         listContent.setCellRenderer(renderer);
+        listContent.setBackground(Color.DARK_GRAY);
+        listContent.setForeground(Color.WHITE);
         //listContent.setCellRenderer(new MyCellRenderer());
 
-        cPanel.add(listContent);
-        pack();
 
-        cPanel.validate();
-        cPanel.repaint();
+        contentPanel = new JScrollPane(listContent);
+        //---- change appearance of contentPanel
+        contentPanel.setPreferredSize(new Dimension(900, 800));
+
+        contentPanel.setBackground(Color.DARK_GRAY);
+        contentPanel.setForeground(Color.WHITE);
+        contentPanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        contentPanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        pack();
+        contentPanel.updateUI();
+        //contentPanel.validate();
+        //contentPanel.repaint();
+
+        c.add(contentPanel, BorderLayout.CENTER);
+    }
+
+
+    // class Content
+    private void buildContent(File selected) {
+        listContent.removeAll();
+        listContent.setBackground(Color.DARK_GRAY);
+        listContent.setForeground(Color.WHITE);
+        // cPanel.removeAll();
+        content = new ArrayList<>(); //new File[(int)selected.length()];
+        thumbnails = new ArrayList<>();//new ImageIcon[(int)selected.length()];
+
+
+        for (File file : selected.listFiles()) {
+            //creates a File and puts it  in the array of content-files
+            content.add(new File(file.getAbsolutePath()));
+
+            //if file is directory, an image of a directory will be pushed in the array of thumbnails on the same position as the file is
+            if (file.isDirectory()) {
+                thumbnails.add(new ImageIcon(getClass().getResource("folder.png")));
+            }
+            //if file is an image (jpg) it creates a Foto, gets the thumbnail of it an pushes it into the array of thumbnails
+            else if (file.isFile() && (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg"))) {
+                Foto foto = new Foto(file.getAbsolutePath());
+                thumbnails.add(foto.getThumbnail());
+            } else {
+                thumbnails.add(new ImageIcon(getClass().getResource("picture.png")));
+            }
+        }
+
+
+        // listContent = new JList<>();
+        listContent.setListData(content.toArray());
+        listContent.updateUI();
+        //listContent.setListData();
+
+
+        contentPanel.add(listContent);
+        pack();
+        contentPanel.validate();
+        contentPanel.repaint();
+        contentPanel.updateUI();
 
     }
 
@@ -392,7 +407,7 @@ public class Frame extends JFrame implements ActionListener {
                             .getPath().getLastPathComponent();
                     System.out.println("You selected " + node);
                     selected = new File(node.toString());
-                    cPanel.removeAll();
+                    // cPanel.removeAll();
                     if (node.getChildCount() > 0) buildContent(selected);
                     //printAll(getGraphics());
                 }
