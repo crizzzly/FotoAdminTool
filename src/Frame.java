@@ -7,6 +7,7 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Vector;
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
@@ -100,6 +101,13 @@ public class Frame extends JFrame implements ActionListener {
         cPanel = new JPanel();
         cPanel.setLayout(new FlowLayout());
         cPanel.setPreferredSize(new Dimension(900, 800));
+
+        //----
+
+        cPanel.setBackground(Color.DARK_GRAY);
+        cPanel.setForeground(Color.WHITE);
+
+        //----
 
         //returnms the last selected item of the fileTree
         if (selected != null) buildContent(selected);
@@ -238,17 +246,80 @@ public class Frame extends JFrame implements ActionListener {
      * creates a button to set up the location of the folder you want to sort.
      */
     private void buildToolbar() {
+        // JToolBar bar = new JToolBar();
+
+
+        //---
+
+
+        // Erstellung einer Menüleiste
+        JMenuBar menu = new JMenuBar();
+        // Menü wird hinzugefügt
+        menu.add(new JMenu("Datei"));
+
+
+        //Toolbar wird erstellt
         JToolBar bar = new JToolBar();
+        //Größe der Toolbar wird gesetzt
+        bar.setSize(230, 20);
+
+        bar.setBackground(Color.DARK_GRAY);
+        bar.setForeground(Color.WHITE);
+
+        //----
+
         bar.setFloatable(false);
         c.add(bar, BorderLayout.NORTH);
         //new JButton, which image is located in the src-folder
+
+        //---
         JButton chooseFolder = new JButton(new ImageIcon(getClass().getResource("folder.png")));
+        //JButton chooseSort = new JButton(new ImageIcon(getClass().getResource("sort.png")));
+        // chooseSort.setSize(12,12);
+
+        JButton bearbeiten = new JButton("Bearbeiten");
+        JButton hilfe = new JButton("Hilfe");
+
+        chooseFolder.setBackground(Color.DARK_GRAY);
+        chooseFolder.setForeground(Color.WHITE);
+
+        // chooseSort.setBackground(Color.DARK_GRAY);
+        // chooseSort.setForeground(Color.WHITE);
+
+        bearbeiten.setBackground(Color.DARK_GRAY);
+        bearbeiten.setForeground(Color.WHITE);
+
+        hilfe.setBackground(Color.DARK_GRAY);
+        hilfe.setForeground(Color.WHITE);
+
+
+
         chooseFolder.setToolTipText("set the location of the folder you want to sort");
+
+        //  chooseSort.setToolTipText("choose the way you want to sort the pictures");
+
+
+
         //if you use setActionCommand you don't have to write one actionListener for each actionEvent.
         chooseFolder.setActionCommand("chooseFolder");
+        //chooseSort.setActionCommand("chooseSort");
+        bearbeiten.setActionCommand("Bearbeiten");
+        hilfe.setActionCommand("Hilfe");
+
         chooseFolder.addActionListener(this);
         bar.add(chooseFolder);
+
+        // chooseSort.addActionListener(this);
+        // bar.add(chooseSort);
+
+
+        bearbeiten.addActionListener(this);
+        bar.add(bearbeiten);
+
+        hilfe.addActionListener(this);
+        bar.add(hilfe);
     }
+    //----
 
     public void actionPerformed(ActionEvent e) {
         Object obj = e.getSource();
@@ -331,20 +402,25 @@ public class Frame extends JFrame implements ActionListener {
          */
         //final Object[] selectedFile = new File[1];
         private JTree tree;
+        private DefaultTreeCellRenderer renderer;
 
         FileTree(File dir) {
             setLayout(new BorderLayout());
 
+
             // Make a tree list with all the nodes, and make it a JTree
             tree = new JTree(addNodes(null, dir));
             //  tree.addItemListener
+            ToolTipManager.sharedInstance().registerComponent(tree);
 
-            //tree.addTreeExpansionListener(new );
-            DefaultTreeCellRenderer treeRenderer;
-            treeRenderer = new DefaultTreeCellRenderer();
+            tree.setBackground(Color.DARK_GRAY);
+            tree.setForeground(Color.WHITE);
 
-            //treeRenderer.firePropertyChange("getText", );
-            tree.setCellRenderer(new MyTreeCellRenderer());
+            renderer = new DefaultTreeCellRenderer();
+            renderer.setBackground(new Color(0, 0, 0, 0));
+            renderer.setBackgroundNonSelectionColor(new Color(0, 0, 0, 0));
+            // renderer.setToolTipText(tree.get);
+            tree.setCellRenderer(renderer);
 
             // Add a listener
             tree.addTreeSelectionListener(new TreeSelectionListener() {
@@ -359,10 +435,8 @@ public class Frame extends JFrame implements ActionListener {
                 }
             });
 
+
             // Lastly, put the JTree into a JScrollPane.
-            //JScrollPane scrollPane = new JScrollPane();
-            //scrollPane.getViewport().add(tree);
-            //add(BorderLayout.CENTER, scrollPane);
             add(tree);
         }
 
@@ -373,6 +447,7 @@ public class Frame extends JFrame implements ActionListener {
         private DefaultMutableTreeNode addNodes(DefaultMutableTreeNode curTop, File dir) {
             String curPath = dir.getPath();
             DefaultMutableTreeNode curDir = new DefaultMutableTreeNode(curPath);
+
             if (curTop != null) { // should only be null at root
                 curTop.add(curDir);
             }
@@ -391,8 +466,12 @@ public class Frame extends JFrame implements ActionListener {
                     newPath = thisObject.getClass().getName();
                 else
                     newPath = curPath + File.separator + thisObject;
-                if ((f = new File(newPath)).isDirectory())
+                if ((f = new File(newPath)).isDirectory()) {
+                    //renderer.setToolTipText(f.getName());
+                    //)tree.setCellRenderer(renderer);
+
                     addNodes(curDir, f);
+                }
                 else
                     files.addElement(thisObject);
             }
@@ -421,39 +500,7 @@ public class Frame extends JFrame implements ActionListener {
         }
 
 
-        public class MyTreeCellRenderer extends DefaultTreeCellRenderer {
 
-            private FileSystemView fsv = FileSystemView.getFileSystemView();
-
-            @Override
-            public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-                //System.out.println(value);
-                super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
-                if (value instanceof DefaultMutableTreeNode) {
-
-                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
-                    Object userValue = node.getUserObject();
-
-                    value = ((DefaultMutableTreeNode) value).getUserObject();
-                if (value instanceof File) {
-                File file = (File) value;
-
-                    if (file.isDirectory()) {
-                    setIcon(fsv.getSystemIcon(file));
-                    setText(file.getName());
-                } else {
-                    setIcon(fsv.getSystemIcon(file));
-                    setText(file.getName());
-                }
-                    setIcon(fsv.getSystemIcon(file));
-                    setText(file.getName());
-                    //setText(((File) value).getName());
-                }
-
-                }
-                return this;
-            }
-        }
     }
 
 }
