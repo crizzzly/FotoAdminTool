@@ -4,11 +4,16 @@ import ImageViewer.ImageViewer;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.event.TreeSelectionListener;
@@ -20,16 +25,9 @@ import javax.swing.tree.*;
  * Created by Chrissi on 31.05.2017.
  * jajaj ich schreib ja schon was
  */
-public class Frame extends JFrame implements ActionListener {
+public class Frame extends JFrame implements ActionListener, PropertyChangeListener {
     private Container c = getContentPane();
 
-    /***************************************************************************
-
-     bei SourcheDir bitte die eigene Adresse eingeben!!!
-     Dann kommt auch der entsprechende Ordner gleich beim start...
-
-
-     *****************************************************************************/
 
     private File sourceDir = new File("C:\\Users\\" + System.getProperty("user.name") + "\\Pictures");
     String username = System.getProperty("user.name");
@@ -50,6 +48,10 @@ public class Frame extends JFrame implements ActionListener {
     private ListModel listModel;
 
     private File selected = null;
+    //JDialog for sorting setup
+    private int hoursBetweenFotos;
+    private JFormattedTextField hoursTextfield;
+    private NumberFormat amountHoursFormat;
     private FileTree fileTree;
 
 
@@ -99,7 +101,10 @@ public class Frame extends JFrame implements ActionListener {
     private void buildContentViewer(File selected) {
 
         //checks if there is a file/folder selected
-        if (selected != null) buildContent(selected);
+        if (selected != null) {
+            //creates new runnable, so it will load pics in background
+            SwingUtilities.invokeLater(() -> buildContent(selected));
+        }
 
 
         listContent = new JList<>();
@@ -242,6 +247,7 @@ public class Frame extends JFrame implements ActionListener {
 
     /**
      * builds the menuBar
+     * made by Jana Seemann
      */
     private void buildMenuBar() {
         // creates menuBar
@@ -340,59 +346,108 @@ public class Frame extends JFrame implements ActionListener {
                     //show the new content in the treeScrollPane
 
                     fileTree.setSelectedTreeNode(selected.getAbsolutePath());
-                    buildContent(selected);
+
+                    //creates new runnable = loads in background
+                    SwingUtilities.invokeLater(() -> buildContent(selected));
                 }
             }
 
+            //made by Jana Seemann
             if (cmd.equals("sort")) {
                 System.out.println("Sortieren clicked");
 
 
-                JPanel panSort = new JPanel();
-                panSort.setLayout(new FlowLayout());
+                //JPanel panSort = new JPanel();
+                //panSort.setLayout(new FlowLayout(FlowLayout.CENTER, 30, 30));
 
-                panSort.add(new JLabel("<html><body> Nach welchen Kriterien wollen Sie sortieren?<br>  </body></html>"));
+                //panSort;
                 // pann.add(new JButton („datum“)); //auch möglich hat dann aber keinen namen
 
                 //jaKnopf.setActionCommand(„datum);
 
 
                 JDialog sortjd = new JDialog();
+                sortjd.setLayout(new FlowLayout(FlowLayout.CENTER, 30, 30));
 
-                sortjd.setSize(200, 100);
+                sortjd.setSize(400, 400);
                 sortjd.setLocation(500, 250);
                 sortjd.setModal(true);
-                sortjd.add(panSort);
+                sortjd.add(new JLabel("<html><body> Nach welchen Kriterien wollen Sie sortieren?                       <br>  </body></html>"));
+
+                JRadioButton radioButtonByDate = new JRadioButton("nach Datum / Zeitabstand sortieren");
+                JRadioButton radioButtonByLocation = new JRadioButton("nach Ort sortieren");
+
+                radioButtonByDate.setEnabled(true);
+                radioButtonByLocation.setEnabled(false);
+
+                ButtonGroup sortBybg = new ButtonGroup();
+                sortBybg.add(radioButtonByDate);
+                sortBybg.add(radioButtonByLocation);
+
+                sortjd.add(radioButtonByDate);
+                sortjd.add(radioButtonByLocation);
+
+                sortjd.add(new JLabel("Bitte Abstand (Stunden bzw. km) eingeben: "));
+                hoursTextfield = new JFormattedTextField(amountHoursFormat);
+                hoursTextfield.setValue(new Integer(6));
+                hoursTextfield.setColumns(10);
+                hoursTextfield.addPropertyChangeListener("hours", this);
+                // hoursTextfield.setMinimumSize(new Dimension(100, 15));
+                sortjd.add(hoursTextfield);
 
 
-                JButton nachDatum = new JButton("nach Datum");
-                JTextField stunden = new JTextField();
-                stunden.setMinimumSize(new Dimension(15, 15));
-
-
-                nachDatum.setActionCommand("nach Datum");
-                nachDatum.addActionListener(this);
-                panSort.add(nachDatum);
-                panSort.add(stunden);
+                JButton sortByDate = new JButton("jetzt sortieren!");
+                sortByDate.setActionCommand("byDate");
+                sortByDate.addActionListener(this);
+                sortjd.add(sortByDate);
 
 
                 sortjd.setVisible(true);
 
-                //plus textfeld wie viele stunden dazwischen liegen sollen , plus button Sortieren starten
+                //plus textfeld wie viele hoursTextfield dazwischen liegen sollen , plus button Sortieren starten
             }
+            /*
+            //button in JDialog
+            if (cmd.equals("byDate")){
+                String textInput = hoursTextfield.getText();
+                try{
+                    hoursBetweenFotos = Integer.parseInt(textInput);
+                    System.out.println("set the space time between fotos to: "+hoursBetweenFotos+" hours");
+                } catch (NumberFormatException ex){
+                    System.out.println("problems with textInput: "+ex);
+                    JDialog alert = new JDialog((Dialog) ((JButton) obj).getParent(), "please insert valid number", true);
+                    alert.setLayout(new FlowLayout());
+                    alert.setSize(300, 200);
+
+                }
+            } */
         }
 
+
         //labels in contentpanel
+        if (obj instanceof JList) {
             if (cmd.equals("folder")) {
                 System.out.println("klicked on folder");
             }
             if (cmd.equals("picture")) {
                 System.out.println("klicked on picture");
             }
+        }
+
 
 
     }
 
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        Object source = evt.getSource();
+        System.out.println("called PropertyChangeListener.");
+
+        if (source == hoursTextfield) {
+            hoursBetweenFotos = ((Number) hoursTextfield.getValue()).intValue();
+            System.out.println("Amount of hours changed to: " + hoursBetweenFotos);
+        }
+    }
 
 
     private class MyFileFilter extends FileFilter {

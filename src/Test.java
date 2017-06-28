@@ -100,7 +100,7 @@ public class Test {
     }
 
     /**
-     * Checks if new directory exists if not, creates a new directory
+     * Checks if new directory exists. if not, creates a new directory
      * adds foto to subdirs arrayList
      *
      * @param sourcePath Path where the pictures to be sorted are saved
