@@ -97,12 +97,8 @@ public class Frame extends JFrame implements ActionListener {
      * for each item in selected, it creates a JLabel and adds it to the contentPane
      */
     private void buildContentViewer(File selected) {
-        //ArrayList<JButton> labels = new ArrayList<>();
-        //cPanel = new JPanel();
-        //cPanel.setLayout(new FlowLayout());
 
-
-        //returnms the last selected item of the fileTree
+        //checks if there is a file/folder selected
         if (selected != null) buildContent(selected);
 
 
@@ -114,33 +110,29 @@ public class Frame extends JFrame implements ActionListener {
         // makes the list display the maximum number of items possible in the available space
         listContent.setVisibleRowCount(-1);
         ListSelectionModel listSelectionModel = listContent.getSelectionModel();
-        //listSelectionModel.addListSelectionListener(new SharedListSelectionHandler());
 
 
         //setup for selection mode: Multiple Intervall means you can select one or more items
         // no matter if there is one non-selected between them
         listContent.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         listContent.setLayoutOrientation(JList.HORIZONTAL_WRAP);
-        // listContent.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-        // listContent.addListSelectionListener((ListSelectionListener) this);
 
+
+        //checks how many times the mouse was clicked. if it was two times, it opens the imageViewer and shows the image
         MouseListener mouseListener = new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     int index = listContent.locationToIndex(e.getPoint());
-                    System.out.println("Double clicked on Item " + index);
+                    //System.out.println("Double clicked on Item " + index);
                     new ImageViewer(new File(listContent.getModel().getElementAt(index).toString()));// .getAccessibleContext().get
-                    System.out.println("item: " + listContent.getModel().getElementAt(index));
+                    // System.out.println("item: " + listContent.getModel().getElementAt(index));
 
                 }
             }
         };
+        //adds the mouseListener to the JList
         listContent.addMouseListener(mouseListener);
 
-
-        //the call to setLayoutOrientation, invoking setVisibleRowCount(-1)
-        // makes the list display the maximum number of items possible in the available space
-        //listSelectionModel.addListSelectionListener(new SharedListSelectionHandler());
 
         // Display an icon and a string for each object in the list.
         class MyCellRenderer extends JLabel implements ListCellRenderer<Object> {
@@ -180,9 +172,9 @@ public class Frame extends JFrame implements ActionListener {
         contentPanel = new JScrollPane(listContent);
         //---- change appearance of contentPanel
         contentPanel.setPreferredSize(new Dimension(900, 800));
-
         contentPanel.setBackground(Color.DARK_GRAY);
         contentPanel.setForeground(Color.WHITE);
+        //sets the scrollbar. horizontal is turned off, vertical is shown when needed
         contentPanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         contentPanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 
@@ -194,8 +186,7 @@ public class Frame extends JFrame implements ActionListener {
         c.add(contentPanel, BorderLayout.CENTER);
     }
 
-
-    // class Content
+    //builds the content of the contenPanel
     private void buildContent(File selected) {
         listContent.removeAll();
         listContent.setBackground(Color.DARK_GRAY);
@@ -213,26 +204,26 @@ public class Frame extends JFrame implements ActionListener {
         wird am Ende der Schleife hochgezählt!
         hier vll die ProgressBar einfügen!!
          */
+        if (selected.listFiles() != null) {
+            for (File file : selected.listFiles()) {
+                //creates a File and puts it  in the array of content-files
+                content.add(new File(file.getAbsolutePath()));
 
-        for (File file : selected.listFiles()) {
-            //creates a File and puts it  in the array of content-files
-            content.add(new File(file.getAbsolutePath()));
+                //if file is directory, an image of a directory will be pushed in the array of thumbnails on the same position as the file is
+                if (file.isDirectory()) {
+                    thumbnails.add(new ImageIcon(getClass().getResource("folder.png")));
+                }
+                //if file is an image (jpg) it creates a Foto, gets the thumbnail of it an pushes it into the array of thumbnails
+                else if (file.isFile() && (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg"))) {
+                    Foto foto = new Foto(file.getAbsolutePath());
+                    thumbnails.add(foto.getThumbnail());
+                } else {
+                    thumbnails.add(new ImageIcon(getClass().getResource("picture.png")));
+                }
 
-            //if file is directory, an image of a directory will be pushed in the array of thumbnails on the same position as the file is
-            if (file.isDirectory()) {
-                thumbnails.add(new ImageIcon(getClass().getResource("folder.png")));
+                loadCount++;
             }
-            //if file is an image (jpg) it creates a Foto, gets the thumbnail of it an pushes it into the array of thumbnails
-            else if (file.isFile() && (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg"))) {
-                Foto foto = new Foto(file.getAbsolutePath());
-                thumbnails.add(foto.getThumbnail());
-            } else {
-                thumbnails.add(new ImageIcon(getClass().getResource("picture.png")));
-            }
-
-            loadCount++;
         }
-
 
         // listContent = new JList<>();
         listContent.setListData(content.toArray());
@@ -249,34 +240,41 @@ public class Frame extends JFrame implements ActionListener {
     }
 
 
+    /**
+     * builds the menuBar
+     */
+    private void buildMenuBar() {
+        // creates menuBar
+        JMenuBar menu = new JMenuBar();
+        // Menü wird hinzugefügt
+        menu.add(new JMenu("Datei"));
+
+        JButton bearbeiten = new JButton("Bearbeiten");
+        JButton hilfe = new JButton("Hilfe");
 
 
+        bearbeiten.setBackground(Color.DARK_GRAY);
+        bearbeiten.setForeground(Color.WHITE);
 
+        hilfe.setBackground(Color.DARK_GRAY);
+        hilfe.setForeground(Color.WHITE);
 
+        bearbeiten.setActionCommand("Bearbeiten");
+        hilfe.setActionCommand("Hilfe");
 
+        bearbeiten.addActionListener(this);
+        hilfe.addActionListener(this);
 
+        //bar.add(bearbeiten);
+        //bar.add(hilfe);
 
+    }
     /**
      * Builds a toolbar that is not movable. if you want it movable, use setFloatable(true)
      * adds the toolbar to the JFrame on top of the frame
      * creates a button to set up the location of the folder you want to sort.
      */
     private void buildToolbar() {
-       // JToolBar bar = new JToolBar();
-
-
-        //---
-
-
-        // Erstellung einer Menüleiste
-        JMenuBar menu = new JMenuBar();
-        // Menü wird hinzugefügt
-        menu.add(new JMenu("Datei"));
-
-
-
-
-
         //Toolbar wird erstellt
         JToolBar bar = new JToolBar();
         //Größe der Toolbar wird gesetzt
@@ -293,36 +291,25 @@ public class Frame extends JFrame implements ActionListener {
 
         //---
         JButton chooseFolder = new JButton(new ImageIcon(getClass().getResource("folder.png")));
-        JButton bearbeiten = new JButton("Bearbeiten");
-        JButton hilfe = new JButton("Hilfe");
+        JButton sortButton = new JButton(new ImageIcon(getClass().getResource("sort-s.png")));
 
         chooseFolder.setBackground(Color.DARK_GRAY);
         chooseFolder.setForeground(Color.WHITE);
 
-        bearbeiten.setBackground(Color.DARK_GRAY);
-        bearbeiten.setForeground(Color.WHITE);
-
-        hilfe.setBackground(Color.DARK_GRAY);
-        hilfe.setForeground(Color.WHITE);
-
-
-
         chooseFolder.setToolTipText("set the location of the folder you want to sort");
+        chooseFolder.setToolTipText("setup for sort function");
 
         //if you use setActionCommand you don't have to write one actionListener for each actionEvent.
         chooseFolder.setActionCommand("chooseFolder");
-        bearbeiten.setActionCommand("Bearbeiten");
-        hilfe.setActionCommand("Hilfe");
+        sortButton.setActionCommand("sort");
 
+        //adds actionListener to the items
         chooseFolder.addActionListener(this);
+        sortButton.addActionListener(this);
+
         bar.add(chooseFolder);
-
-        bearbeiten.addActionListener(this);
-        bar.add(bearbeiten);
-
-        hilfe.addActionListener(this);
-        bar.add(hilfe);
-    }
+        bar.add(sortButton);
+  }
     //----
 
     public void actionPerformed(ActionEvent e) {
@@ -356,7 +343,46 @@ public class Frame extends JFrame implements ActionListener {
                     buildContent(selected);
                 }
             }
-            //labels in contentpanel
+
+            if (cmd.equals("sort")) {
+                System.out.println("Sortieren clicked");
+
+
+                JPanel panSort = new JPanel();
+                panSort.setLayout(new FlowLayout());
+
+                panSort.add(new JLabel("<html><body> Nach welchen Kriterien wollen Sie sortieren?<br>  </body></html>"));
+                // pann.add(new JButton („datum“)); //auch möglich hat dann aber keinen namen
+
+                //jaKnopf.setActionCommand(„datum);
+
+
+                JDialog sortjd = new JDialog();
+
+                sortjd.setSize(200, 100);
+                sortjd.setLocation(500, 250);
+                sortjd.setModal(true);
+                sortjd.add(panSort);
+
+
+                JButton nachDatum = new JButton("nach Datum");
+                JTextField stunden = new JTextField();
+                stunden.setMinimumSize(new Dimension(15, 15));
+
+
+                nachDatum.setActionCommand("nach Datum");
+                nachDatum.addActionListener(this);
+                panSort.add(nachDatum);
+                panSort.add(stunden);
+
+
+                sortjd.setVisible(true);
+
+                //plus textfeld wie viele stunden dazwischen liegen sollen , plus button Sortieren starten
+            }
+        }
+
+        //labels in contentpanel
             if (cmd.equals("folder")) {
                 System.out.println("klicked on folder");
             }
@@ -365,8 +391,8 @@ public class Frame extends JFrame implements ActionListener {
             }
 
 
-        }
     }
+
 
 
     private class MyFileFilter extends FileFilter {
