@@ -2,11 +2,16 @@ package ImageViewer;
 
 import java.awt.*;
 import java.awt.event.*;
+import javax.imageio.ImageIO;
+import javax.imageio.stream.ImageInputStream;
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * ImageViewer is the main class of the image viewer application. It builds and
@@ -38,6 +43,24 @@ public class ImageViewer implements TreeSelectionListener {
         makeFrame();
     }
 
+    public ImageViewer(File file) {
+        System.out.println("imageViewer filePath: " + file.getAbsolutePath());
+        BufferedImage image = null;
+        try {
+            image = ImageIO.read(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println("loaded bufferedImage: " + Arrays.toString(image.getPropertyNames()));
+
+        // currentImage = new OFImage(image);
+        currentImage = new OFImage(image);//ImageFileManager.loadImage(file);//new OFImage(image);
+        assert currentImage != null;
+        //showFilename(file.getName());
+        makeFrame();
+        imagePanel.setImage(currentImage);
+
+    }
 
     // ---- implementation of menu functions ----
 

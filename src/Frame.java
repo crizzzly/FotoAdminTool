@@ -1,8 +1,9 @@
 //package Gui;
 
+import ImageViewer.ImageViewer;
+
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -123,6 +124,20 @@ public class Frame extends JFrame implements ActionListener {
         // listContent.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         // listContent.addListSelectionListener((ListSelectionListener) this);
 
+        MouseListener mouseListener = new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int index = listContent.locationToIndex(e.getPoint());
+                    System.out.println("Double clicked on Item " + index);
+                    new ImageViewer(new File(listContent.getModel().getElementAt(index).toString()));// .getAccessibleContext().get
+                    System.out.println("item: " + listContent.getModel().getElementAt(index));
+
+                }
+            }
+        };
+        listContent.addMouseListener(mouseListener);
+
+
         //the call to setLayoutOrientation, invoking setVisibleRowCount(-1)
         // makes the list display the maximum number of items possible in the available space
         //listSelectionModel.addListSelectionListener(new SharedListSelectionHandler());
@@ -185,10 +200,19 @@ public class Frame extends JFrame implements ActionListener {
         listContent.removeAll();
         listContent.setBackground(Color.DARK_GRAY);
         listContent.setForeground(Color.WHITE);
+        listContent.setDragEnabled(true);
+        //)JList.DropLocation setDropLocatu
         // cPanel.removeAll();
         content = new ArrayList<>(); //new File[(int)selected.length()];
         thumbnails = new ArrayList<>();//new ImageIcon[(int)selected.length()];
 
+
+        int loadCount = 0;
+        /*
+        loadCount zählt die Inhalte, die bereits geladen wurden!
+        wird am Ende der Schleife hochgezählt!
+        hier vll die ProgressBar einfügen!!
+         */
 
         for (File file : selected.listFiles()) {
             //creates a File and puts it  in the array of content-files
@@ -205,6 +229,8 @@ public class Frame extends JFrame implements ActionListener {
             } else {
                 thumbnails.add(new ImageIcon(getClass().getResource("picture.png")));
             }
+
+            loadCount++;
         }
 
 
