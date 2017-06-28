@@ -397,7 +397,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
 
 
                 JButton sortByDate = new JButton("jetzt sortieren!");
-                sortByDate.setActionCommand("byDate");
+                sortByDate.setActionCommand("sortNow");
                 sortByDate.addActionListener(this);
                 sortjd.add(sortByDate);
 
@@ -406,10 +406,14 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
 
                 //plus textfeld wie viele hoursTextfield dazwischen liegen sollen , plus button Sortieren starten
             }
-            /*
+
             //button in JDialog
-            if (cmd.equals("byDate")){
+            if (cmd.equals("sortNow")) {
                 String textInput = hoursTextfield.getText();
+                hoursBetweenFotos = ((Number) hoursTextfield.getValue()).intValue();
+
+                //JOptionPane optionPane = new JOptionPane()
+                /*
                 try{
                     hoursBetweenFotos = Integer.parseInt(textInput);
                     System.out.println("set the space time between fotos to: "+hoursBetweenFotos+" hours");
@@ -419,8 +423,18 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                     alert.setLayout(new FlowLayout());
                     alert.setSize(300, 200);
 
+                } */
+
+                new JOptionPane();
+                int n = JOptionPane.showConfirmDialog(this, "Alle Fotos aus dem Ordner \n"
+                                + selected.getAbsolutePath() + "\ndie mehr als " + hoursBetweenFotos + " Std / km voneinander entfernt aufgenommen wurden\n" +
+                                "werden nun in separate Unterordner verschoben. \n\n\n" +
+                                "Sind Sie sicher, dass Sie das tun wollen?",
+                        "Sind Sie sich sicher? ", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                if (n == JOptionPane.YES_OPTION) {
+                    sortImagesByDateTime(selected, hoursBetweenFotos);
                 }
-            } */
+            }
         }
 
 
@@ -435,6 +449,10 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         }
 
 
+
+    }
+
+    private void sortImagesByDateTime(File pathToSort, int hoursBetweenFotos) {
 
     }
 

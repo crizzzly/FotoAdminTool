@@ -34,7 +34,9 @@ public class Test {
         //reads the directory and saves every single file in the Foto-arrayList
         try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(sourcePath)) {
             for (Path file : directoryStream) {
-                if (!Files.isDirectory(file)) {
+                if (Files.isDirectory(file)) {
+                    subDirs.add(file);
+                } else if (file.getFileName().toString().toLowerCase().endsWith("jpg") || file.getFileName().toString().toLowerCase().endsWith("jpeg")) {
                     fotos.add(new Foto(sourcePath.toString(), file.getFileName().toString()));
                 }
 
