@@ -12,8 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.event.TreeSelectionListener;
@@ -30,28 +28,21 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
 
 
     private File sourceDir = new File("C:\\Users\\" + System.getProperty("user.name") + "\\Pictures");
-    String username = System.getProperty("user.name");
 
-    //System.out.println(username);
-
-
-    //private ArrayList<JLabel> listed = new ArrayList<>();
-    // private JLabel[] labels; // = new JLabel[listed.size()];
-
-    private JScrollPane treeScrollPane;
     //content panel
-    private JPanel cPanel;
     private JScrollPane contentPanel;
     private JList listContent;
+    private JPanel progressPanel;
     private ArrayList<ImageIcon> thumbnails;
     private ArrayList<File> content;
     private ListModel listModel;
-
     private File selected = null;
     //JDialog for sorting setup
     private int hoursBetweenFotos;
     private JFormattedTextField hoursTextfield;
     private NumberFormat amountHoursFormat;
+    //counts the loaded images
+    private int loadCount;
     private FileTree fileTree;
 
 
@@ -81,9 +72,18 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
     }
 
     private void buildProgressBar() {
-        JPanel progressPanel = new JPanel();
+        progressPanel = new JPanel();
+        progressPanel.removeAll();
 
+        //if(selected != null) {
+        JLabel progress = new JLabel(loadCount + " images of " + selected.listFiles().length + " loaded.");
+        progressPanel.add(progress);
+        //}
         c.add(progressPanel, BorderLayout.SOUTH);
+        pack();
+        progressPanel.validate();
+        progressPanel.updateUI();
+        progressPanel.updateUI();
 
     }
     //end of constructor
@@ -103,7 +103,9 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         //checks if there is a file/folder selected
         if (selected != null) {
             //creates new runnable, so it will load pics in background
-            SwingUtilities.invokeLater(() -> buildContent(selected));
+            SwingUtilities.invokeLater(() -> {
+                buildContent(selected);
+            });
         }
 
 
@@ -121,6 +123,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         // no matter if there is one non-selected between them
         listContent.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         listContent.setLayoutOrientation(JList.HORIZONTAL_WRAP);
+
 
 
         //checks how many times the mouse was clicked. if it was two times, it opens the imageViewer and shows the image
@@ -181,7 +184,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         contentPanel.setForeground(Color.WHITE);
         //sets the scrollbar. horizontal is turned off, vertical is shown when needed
         contentPanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        contentPanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        contentPanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 
         pack();
         contentPanel.updateUI();
@@ -198,49 +201,78 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         listContent.setForeground(Color.WHITE);
         listContent.setDragEnabled(true);
         //)JList.DropLocation setDropLocatu
-        // cPanel.removeAll();
-        content = new ArrayList<>(); //new File[(int)selected.length()];
-        thumbnails = new ArrayList<>();//new ImageIcon[(int)selected.length()];
+        content = new ArrayList<>();
+        thumbnails = new ArrayList<>();
 
 
-        int loadCount = 0;
+        loadCount = 0;
+        buildProgressBar();
+        progressPanel.removeAll();
+        progressPanel.updateUI();
+
+        /*Thread createContent = new CreateContThread();
+
+        if(createContent.isAlive()){
+            System.out.println("createContThread in progress");
+        }else{
+            System.out.println("createContThread is done");
+
+            listContent.setListData(content.toArray());
+            listContent.updateUI();
+
+
+            contentPanel.add(listContent);
+        }
+        */
         /*
         loadCount zählt die Inhalte, die bereits geladen wurden!
         wird am Ende der Schleife hochgezählt!
         hier vll die ProgressBar einfügen!!
          */
-        if (selected.listFiles() != null) {
-            for (File file : selected.listFiles()) {
-                //creates a File and puts it  in the array of content-files
-                content.add(new File(file.getAbsolutePath()));
+        SwingWorker createJList = new SwingWorker() {
+            @Override
+            protected Object doInBackground() throws Exception {
+                if (selected.listFiles() != null) {
+                    for (File file : selected.listFiles()) {
+                        //creates a File and puts it  in the array of content-files
+                        content.add(new File(file.getAbsolutePath()));
 
-                //if file is directory, an image of a directory will be pushed in the array of thumbnails on the same position as the file is
-                if (file.isDirectory()) {
-                    thumbnails.add(new ImageIcon(getClass().getResource("folder.png")));
-                }
-                //if file is an image (jpg) it creates a Foto, gets the thumbnail of it an pushes it into the array of thumbnails
-                else if (file.isFile() && (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg"))) {
-                    Foto foto = new Foto(file.getAbsolutePath());
-                    thumbnails.add(foto.getThumbnail());
-                } else {
-                    thumbnails.add(new ImageIcon(getClass().getResource("picture.png")));
-                }
+                        //if file is directory, an image of a directory will be pushed in the array of thumbnails on the same position as the file is
+                        if (file.isDirectory()) {
+                            thumbnails.add(new ImageIcon(getClass().getResource("folder.png")));
+                        }
+                        //if file is an image (jpg) it creates a Foto, gets the thumbnail of it an pushes it into the array of thumbnails
+                        else if (file.isFile() && (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg")
+                                || file.getName().toLowerCase().endsWith("mp4") || file.getName().toLowerCase().endsWith("mpeg4"))) {
 
-                loadCount++;
+                            Foto foto = new Foto(file.getAbsolutePath());
+                            thumbnails.add(foto.getThumbnail());
+                        } else {
+                            thumbnails.add(new ImageIcon(getClass().getResource("picture.png")));
+                        }
+
+                        loadCount++;
+                        buildProgressBar();
+                        System.out.println(loadCount + " files of " + selected.listFiles().length + " loaded.");
+                    }
+                }
+                return null;
             }
-        }
 
-        // listContent = new JList<>();
-        listContent.setListData(content.toArray());
-        listContent.updateUI();
-        //listContent.setListData();
+            @Override
+            public void done() {
+                listContent.setListData(content.toArray());
+                listContent.updateUI();
+                contentPanel.add(listContent);
+                pack();
+                contentPanel.validate();
+                contentPanel.repaint();
+                contentPanel.updateUI();
+            }
+        };
+        createJList.execute();
 
 
-        contentPanel.add(listContent);
-        pack();
-        contentPanel.validate();
-        contentPanel.repaint();
-        contentPanel.updateUI();
 
     }
 
@@ -318,180 +350,14 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
   }
     //----
 
-    public void actionPerformed(ActionEvent e) {
-        Object obj = e.getSource();
-        String cmd = e.getActionCommand();
-        /*
-        folder-Button:
-         opens filechooser to choose directory to sort
-         save chosen directory in sourceDir
-         */
-        if (obj instanceof JButton) {
-            //toolbar
-            //Button to choose the folder which should be sorted
-            if (cmd.equals("chooseFolder")) {
-                System.out.println("chooseFolder clicked");
-                //opens the pop up window to search through the local stored folders.
-                JFileChooser fc = new JFileChooser();
-                //first directory shown when the file chooser window is opened
-                fc.setCurrentDirectory(new File("C:\\Users\\" + System.getProperty("user.name") + "\\Pictures"));
-                //implements a new FileFilter (function below)
-                fc.setFileFilter(new MyFileFilter());
-                //directories_only important because else you would choose files instead of dirs
-                fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-                    //if a valid choice is made, the selected folder of the filechooser will be saved in sourceDir
-                    selected = fc.getSelectedFile();
-                    // sourcheDirSet = true;
-                    //show the new content in the treeScrollPane
-
-                    fileTree.setSelectedTreeNode(selected.getAbsolutePath());
-
-                    //creates new runnable = loads in background
-                    SwingUtilities.invokeLater(() -> buildContent(selected));
-                }
-            }
-
-            //made by Jana Seemann
-            if (cmd.equals("sort")) {
-                System.out.println("Sortieren clicked");
-
-
-                //JPanel panSort = new JPanel();
-                //panSort.setLayout(new FlowLayout(FlowLayout.CENTER, 30, 30));
-
-                //panSort;
-                // pann.add(new JButton („datum“)); //auch möglich hat dann aber keinen namen
-
-                //jaKnopf.setActionCommand(„datum);
-
-
-                JDialog sortjd = new JDialog();
-                sortjd.setLayout(new FlowLayout(FlowLayout.CENTER, 30, 30));
-
-                sortjd.setSize(400, 400);
-                sortjd.setLocation(500, 250);
-                sortjd.setModal(true);
-                sortjd.add(new JLabel("<html><body> Nach welchen Kriterien wollen Sie sortieren?                       <br>  </body></html>"));
-
-                JRadioButton radioButtonByDate = new JRadioButton("nach Datum / Zeitabstand sortieren");
-                JRadioButton radioButtonByLocation = new JRadioButton("nach Ort sortieren");
-
-                radioButtonByDate.setEnabled(true);
-                radioButtonByLocation.setEnabled(false);
-
-                ButtonGroup sortBybg = new ButtonGroup();
-                sortBybg.add(radioButtonByDate);
-                sortBybg.add(radioButtonByLocation);
-
-                sortjd.add(radioButtonByDate);
-                sortjd.add(radioButtonByLocation);
-
-                sortjd.add(new JLabel("Bitte Abstand (Stunden bzw. km) eingeben: "));
-                hoursTextfield = new JFormattedTextField(amountHoursFormat);
-                hoursTextfield.setValue(new Integer(6));
-                hoursTextfield.setColumns(10);
-                hoursTextfield.addPropertyChangeListener("hours", this);
-                // hoursTextfield.setMinimumSize(new Dimension(100, 15));
-                sortjd.add(hoursTextfield);
-
-
-                JButton sortByDate = new JButton("jetzt sortieren!");
-                sortByDate.setActionCommand("sortNow");
-                sortByDate.addActionListener(this);
-                sortjd.add(sortByDate);
-
-
-                sortjd.setVisible(true);
-
-                //plus textfeld wie viele hoursTextfield dazwischen liegen sollen , plus button Sortieren starten
-            }
-
-            //button in JDialog
-            if (cmd.equals("sortNow")) {
-                String textInput = hoursTextfield.getText();
-                hoursBetweenFotos = ((Number) hoursTextfield.getValue()).intValue();
-
-                //JOptionPane optionPane = new JOptionPane()
-                /*
-                try{
-                    hoursBetweenFotos = Integer.parseInt(textInput);
-                    System.out.println("set the space time between fotos to: "+hoursBetweenFotos+" hours");
-                } catch (NumberFormatException ex){
-                    System.out.println("problems with textInput: "+ex);
-                    JDialog alert = new JDialog((Dialog) ((JButton) obj).getParent(), "please insert valid number", true);
-                    alert.setLayout(new FlowLayout());
-                    alert.setSize(300, 200);
-
-                } */
-
-                new JOptionPane();
-                int n = JOptionPane.showConfirmDialog(this, "Alle Fotos aus dem Ordner \n"
-                                + selected.getAbsolutePath() + "\ndie mehr als " + hoursBetweenFotos + " Std / km voneinander entfernt aufgenommen wurden\n" +
-                                "werden nun in separate Unterordner verschoben. \n\n\n" +
-                                "Sind Sie sicher, dass Sie das tun wollen?",
-                        "Sind Sie sich sicher? ", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-                if (n == JOptionPane.YES_OPTION) {
-                    sortImagesByDateTime(selected, hoursBetweenFotos);
-                }
-            }
-        }
-
-
-        //labels in contentpanel
-        if (obj instanceof JList) {
-            if (cmd.equals("folder")) {
-                System.out.println("klicked on folder");
-            }
-            if (cmd.equals("picture")) {
-                System.out.println("klicked on picture");
-            }
-        }
-
-
-
-    }
-
-    private void sortImagesByDateTime(File pathToSort, int hoursBetweenFotos) {
-
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        Object source = evt.getSource();
-        System.out.println("called PropertyChangeListener.");
-
-        if (source == hoursTextfield) {
-            hoursBetweenFotos = ((Number) hoursTextfield.getValue()).intValue();
-            System.out.println("Amount of hours changed to: " + hoursBetweenFotos);
-        }
-    }
-
-
-    private class MyFileFilter extends FileFilter {
-        public boolean accept(File file) {
-            return file.isDirectory();
-        }
-
-        public String getDescription() {
-            return "directory";
-        }
-
-    }
-
     //Creates a JScrollPane, creates a new FileTree instance with given directory saved in sourceDir
     //adds the FileTree to the treeScrollPane on left side
     private void buildFileTree() {
-        treeScrollPane = new JScrollPane();
+        JScrollPane treeScrollPane = new JScrollPane();
         fileTree = new FileTree(sourceDir);
-
         treeScrollPane.getViewport().add(fileTree);
-
         c.add(treeScrollPane, BorderLayout.WEST);
-
-
     }
-
 
     /**
      * Display a file system in a JTree view
@@ -574,8 +440,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                     //)tree.setCellRenderer(renderer);
 
                     addNodes(curDir, f);
-                }
-                else
+                } else
                     files.addElement(thisObject);
             }
             // Pass two: for files.
@@ -601,9 +466,192 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             tree.setSelectionPath(tPath);
             tree.expandPath(tPath);
         }
+    }
 
 
+    private void sortImagesByDateTime(File pathToSort, int hoursBetweenFotos) {
+        SortImages.sort(hoursBetweenFotos, pathToSort.toPath());
+
+        /*SwingWorker<Void, Void> sw = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                SortImages.sort(hoursBetweenFotos, pathToSort.toPath());
+
+                return null;
+            }
+            protected void done(){
+                buildContent(pathToSort);
+                buildFileTree();
+            }
+        };
+        sw.execute();*/
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        Object obj = e.getSource();
+        String cmd = e.getActionCommand();
+        /*
+        folder-Button:
+         opens filechooser to choose directory to sort
+         save chosen directory in sourceDir
+         */
+        if (obj instanceof JButton) {
+            //toolbar
+            //Button to choose the folder which should be sorted
+            if (cmd.equals("chooseFolder")) {
+                System.out.println("chooseFolder clicked");
+                //opens the pop up window to search through the local stored folders.
+                JFileChooser fc = new JFileChooser();
+                //first directory shown when the file chooser window is opened
+                fc.setCurrentDirectory(new File("C:\\Users\\" + System.getProperty("user.name") + "\\Pictures"));
+                //implements a new FileFilter (function below)
+                fc.setFileFilter(new MyFileFilter());
+                //directories_only important because else you would choose files instead of dirs
+                fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                    //if a valid choice is made, the selected folder of the filechooser will be saved in sourceDir
+                    selected = fc.getSelectedFile();
+                    // sourcheDirSet = true;
+                    //show the new content in the treeScrollPane
+
+                    fileTree.setSelectedTreeNode(selected.getAbsolutePath());
+
+                    //creates new runnable = loads in background
+                    SwingUtilities.invokeLater(() -> buildContent(selected));
+                }
+            }
+            //made by Jana Seemann
+            if (cmd.equals("sort")) {
+                System.out.println("Sortieren clicked");
+
+                JDialog sortjd = new JDialog();
+                sortjd.setLayout(new FlowLayout(FlowLayout.CENTER, 30, 30));
+
+                sortjd.setSize(400, 400);
+                sortjd.setLocation(500, 250);
+                sortjd.setModal(true);
+                sortjd.add(new JLabel("<html><body> Nach welchen Kriterien wollen Sie sortieren?                       <br>  </body></html>"));
+
+                JRadioButton radioButtonByDate = new JRadioButton("nach Datum / Zeitabstand sortieren");
+                JRadioButton radioButtonByLocation = new JRadioButton("nach Ort sortieren");
+
+                radioButtonByDate.setEnabled(true);
+                radioButtonByLocation.setEnabled(false);
+
+                ButtonGroup sortBybg = new ButtonGroup();
+                sortBybg.add(radioButtonByDate);
+                sortBybg.add(radioButtonByLocation);
+
+                sortjd.add(radioButtonByDate);
+                sortjd.add(radioButtonByLocation);
+
+                sortjd.add(new JLabel("Bitte Abstand (Stunden bzw. km) eingeben: "));
+                hoursTextfield = new JFormattedTextField(amountHoursFormat);
+                hoursTextfield.setValue(new Integer(6));
+                hoursTextfield.setColumns(10);
+                hoursTextfield.addPropertyChangeListener("hours", this);
+                // hoursTextfield.setMinimumSize(new Dimension(100, 15));
+                sortjd.add(hoursTextfield);
+
+
+                JButton sortByDate = new JButton("jetzt sortieren!");
+                sortByDate.setActionCommand("sortNow");
+                sortByDate.addActionListener(this);
+                sortjd.add(sortByDate);
+
+
+                sortjd.setVisible(true);
+
+                //plus textfeld wie viele hoursTextfield dazwischen liegen sollen , plus button Sortieren starten
+            }
+
+            //button in JDialog
+            //if pressed, optionPane opens to check if the right folder and distance between taken fotos are specified.
+            // then calls method to sort
+            if (cmd.equals("sortNow")) {
+                String textInput = hoursTextfield.getText();
+                hoursBetweenFotos = ((Number) hoursTextfield.getValue()).intValue();
+
+                new JOptionPane();
+                int n = JOptionPane.showConfirmDialog(this, "Alle Fotos aus dem Ordner \n"
+                                + selected.getAbsolutePath() + "\ndie mehr als " + hoursBetweenFotos + " Std / km voneinander entfernt aufgenommen wurden\n" +
+                                "werden nun in separate Unterordner verschoben. \n\n\n" +
+                                "Sind Sie sicher, dass Sie das tun wollen?",
+                        "Sind Sie sich sicher? ", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                if (n == JOptionPane.YES_OPTION) {
+                    sortImagesByDateTime(selected, hoursBetweenFotos);
+                }
+            }
+        }
+        //labels in contentpanel
+        if (obj instanceof JList) {
+            if (cmd.equals("folder")) {
+                System.out.println("klicked on folder");
+            }
+            if (cmd.equals("picture")) {
+                System.out.println("klicked on picture");
+            }
+        }
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        Object source = evt.getSource();
+        System.out.println("called PropertyChangeListener.");
+
+        if (source == hoursTextfield) {
+            hoursBetweenFotos = ((Number) hoursTextfield.getValue()).intValue();
+            System.out.println("Amount of hours changed to: " + hoursBetweenFotos);
+        }
+    }
+
+
+    private class MyFileFilter extends FileFilter {
+        public boolean accept(File file) {
+            return file.isDirectory();
+        }
+
+        public String getDescription() {
+            return "directory";
+        }
 
     }
 
+/*
+    private  class CreateContThread extends Thread {
+            boolean stop = false;
+            public void run() {
+
+                while (true) {
+                    if (selected.listFiles() != null) {
+                        for (File file : selected.listFiles()) {
+                            //creates a File and puts it  in the array of content-files
+                            content.add(new File(file.getAbsolutePath()));
+
+                            //if file is directory, an image of a directory will be pushed in the array of thumbnails on the same position as the file is
+                            if (file.isDirectory()) {
+                                thumbnails.add(new ImageIcon(getClass().getResource("folder.png")));
+                            }
+                            //if file is an image (jpg) it creates a Foto, gets the thumbnail of it an pushes it into the array of thumbnails
+                            else if (file.isFile() && (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg")
+                                    || file.getName().toLowerCase().endsWith("mp4") || file.getName().toLowerCase().endsWith("mpeg4"))) {
+
+                                Foto foto = new Foto(file.getAbsolutePath());
+                                thumbnails.add(foto.getThumbnail());
+                            } else {
+                                thumbnails.add(new ImageIcon(getClass().getResource("picture.png")));
+                            }
+
+                            loadCount++;
+                            buildProgressBar();
+                            System.out.println(loadCount+ " files of " +selected.listFiles().length  + " loaded.");
+                        }
+                    }
+                    if (stop) {
+                        return;
+                    }
+                }
+            }
+        }*/
 }
+
