@@ -7,14 +7,14 @@ import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
+import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.event.TreeSelectionEvent;
 import javax.swing.filechooser.FileFilter;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.text.Position;
 import javax.swing.tree.*;
 
@@ -26,17 +26,18 @@ import javax.swing.tree.*;
 public class Frame extends JFrame implements ActionListener, PropertyChangeListener {
     private Container c = getContentPane();
 
-
+    //opens the windows standard directory for pictures on startup
     private File sourceDir = new File("C:\\Users\\" + System.getProperty("user.name") + "\\Pictures");
 
     //content panel
     private JScrollPane contentPanel;
     private JList listContent;
-    private JPanel progressPanel;
-    private ArrayList<ImageIcon> thumbnails;
+    //private JPanel progressPanel;
+
+    private ArrayList<Image> thumbnails;
     private ArrayList<File> content;
-    private ListModel listModel;
     private File selected = null;
+
     //JDialog for sorting setup
     private int hoursBetweenFotos;
     private JFormattedTextField hoursTextfield;
@@ -46,7 +47,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
     private FileTree fileTree;
 
 
-    public Frame() {
+    Frame() {
 
         super("Foto Administration Tool");
 
@@ -63,20 +64,22 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         buildToolbar();
         buildFileTree();
         //if (fileTree.getSelected() != null)
-        buildContentViewer(null);
+        buildContentPanel();
         //buildProgressBar();
 
 
         pack();
         setVisible(true);
     }
-
+    /*
     private void buildProgressBar() {
         progressPanel = new JPanel();
         progressPanel.removeAll();
+        JLabel progress;
 
-        //if(selected != null) {
-        JLabel progress = new JLabel(loadCount + " images of " + selected.listFiles().length + " loaded.");
+        if(content.size() != 0) {
+             progress = new JLabel(loadCount + " images of " + content.size() + " loaded.");
+        }
         progressPanel.add(progress);
         //}
         c.add(progressPanel, BorderLayout.SOUTH);
@@ -86,7 +89,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         progressPanel.updateUI();
 
     }
-    //end of constructor
+    */
 
     /**
      * build the screen in the middle where all files and directories are shown. perhabs sooon with thumbnail!!
@@ -98,33 +101,76 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
      * saves the complete list of the selected item in content as array
      * for each item in selected, it creates a JLabel and adds it to the contentPane
      */
-    private void buildContentViewer(File selected) {
+    private void buildContentPanel() {
 
         //checks if there is a file/folder selected
         if (selected != null) {
-            //creates new runnable, so it will load pics in background
-            SwingUtilities.invokeLater(() -> {
-                buildContent(selected);
-            });
+            //SwingUtilities.invokeLater(() -> buildContent(selected));
+            buildContent(selected);
         }
 
 
         listContent = new JList<>();
         //listContent.setListData();
-        listModel = new DefaultListModel();
-
+        ListModel listModel = new DefaultListModel();
         //the call to setLayoutOrientation, invoking setVisibleRowCount(-1)
         // makes the list display the maximum number of items possible in the available space
         listContent.setVisibleRowCount(-1);
-        ListSelectionModel listSelectionModel = listContent.getSelectionModel();
-
 
         //setup for selection mode: Multiple Intervall means you can select one or more items
         // no matter if there is one non-selected between them
         listContent.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         listContent.setLayoutOrientation(JList.HORIZONTAL_WRAP);
 
+        //changes color of listContent
+        listContent.setBackground(Color.DARK_GRAY);
+        listContent.setForeground(Color.WHITE);
+        //listContent.setCellRenderer(new MyCellRenderer());
 
+        //adds JList to contentPanel (JScrollpane)
+        contentPanel = new JScrollPane(listContent);
+        //---- change appearance of contentPanel
+        contentPanel.setPreferredSize(new Dimension(900, 800));
+        contentPanel.setBackground(Color.DARK_GRAY);
+        contentPanel.setForeground(Color.WHITE);
+        //sets the scrollbar. horizontal is turned off, vertical is shown when needed
+        contentPanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        contentPanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+
+        pack();
+        contentPanel.updateUI();
+        //contentPanel.validate();
+        //contentPanel.repaint();
+
+        c.add(contentPanel, BorderLayout.CENTER);
+    }
+
+    //builds the content of the contenPanel
+    private void buildContent(File selected) {
+        listContent.removeAll();
+        listContent.setBackground(Color.DARK_GRAY);
+        listContent.setForeground(Color.WHITE);
+        listContent.setDragEnabled(true);
+        //)JList.DropLocation setDropLocatu
+        content = new ArrayList<>();
+        thumbnails = new ArrayList<>();
+
+
+        loadCount = 0;
+        //buildProgressBar();
+        //progressPanel.removeAll();
+        //progressPanel.updateUI();
+
+        if (selected.listFiles() != null) {
+            assert selected.length() != 0;
+            for (String path : selected.list()) {
+                //creates a File and puts it  in the array of content-files
+                content.add(new File(path));
+            }
+        }
+
+        listContent.setListData(content.toArray());
+        listContent.updateUI();
 
         //checks how many times the mouse was clicked. if it was two times, it opens the imageViewer and shows the image
         MouseListener mouseListener = new MouseAdapter() {
@@ -156,7 +202,8 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                     boolean cellHasFocus)    // does the cell have focus
             {
                 setText(content.get(index).getName());
-                setIcon(thumbnails.get(index));
+                //setIcon((Icon) thumbnails.get(index));
+                setIcon((new ImageIcon(thumbnails.get(index))));
                 if (isSelected) {
                     setBackground(list.getSelectionBackground());
                     setForeground(list.getSelectionForeground());
@@ -172,105 +219,13 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         }
         ListCellRenderer<Object> renderer = new MyCellRenderer();
         listContent.setCellRenderer(renderer);
-        listContent.setBackground(Color.DARK_GRAY);
-        listContent.setForeground(Color.WHITE);
-        //listContent.setCellRenderer(new MyCellRenderer());
 
-
-        contentPanel = new JScrollPane(listContent);
-        //---- change appearance of contentPanel
-        contentPanel.setPreferredSize(new Dimension(900, 800));
-        contentPanel.setBackground(Color.DARK_GRAY);
-        contentPanel.setForeground(Color.WHITE);
-        //sets the scrollbar. horizontal is turned off, vertical is shown when needed
-        contentPanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        contentPanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-
+        contentPanel.add(listContent);
+        c.add(contentPanel);
         pack();
+        contentPanel.validate();
+        contentPanel.repaint();
         contentPanel.updateUI();
-        //contentPanel.validate();
-        //contentPanel.repaint();
-
-        c.add(contentPanel, BorderLayout.CENTER);
-    }
-
-    //builds the content of the contenPanel
-    private void buildContent(File selected) {
-        listContent.removeAll();
-        listContent.setBackground(Color.DARK_GRAY);
-        listContent.setForeground(Color.WHITE);
-        listContent.setDragEnabled(true);
-        //)JList.DropLocation setDropLocatu
-        content = new ArrayList<>();
-        thumbnails = new ArrayList<>();
-
-
-        loadCount = 0;
-        buildProgressBar();
-        progressPanel.removeAll();
-        progressPanel.updateUI();
-
-        /*Thread createContent = new CreateContThread();
-
-        if(createContent.isAlive()){
-            System.out.println("createContThread in progress");
-        }else{
-            System.out.println("createContThread is done");
-
-            listContent.setListData(content.toArray());
-            listContent.updateUI();
-
-
-            contentPanel.add(listContent);
-        }
-        */
-        /*
-        loadCount zählt die Inhalte, die bereits geladen wurden!
-        wird am Ende der Schleife hochgezählt!
-        hier vll die ProgressBar einfügen!!
-         */
-        SwingWorker createJList = new SwingWorker() {
-            @Override
-            protected Object doInBackground() throws Exception {
-                if (selected.listFiles() != null) {
-                    for (File file : selected.listFiles()) {
-                        //creates a File and puts it  in the array of content-files
-                        content.add(new File(file.getAbsolutePath()));
-
-                        //if file is directory, an image of a directory will be pushed in the array of thumbnails on the same position as the file is
-                        if (file.isDirectory()) {
-                            thumbnails.add(new ImageIcon(getClass().getResource("folder.png")));
-                        }
-                        //if file is an image (jpg) it creates a Foto, gets the thumbnail of it an pushes it into the array of thumbnails
-                        else if (file.isFile() && (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg")
-                                || file.getName().toLowerCase().endsWith("mp4") || file.getName().toLowerCase().endsWith("mpeg4"))) {
-
-                            Foto foto = new Foto(file.getAbsolutePath());
-                            thumbnails.add(foto.getThumbnail());
-                        } else {
-                            thumbnails.add(new ImageIcon(getClass().getResource("picture.png")));
-                        }
-
-                        loadCount++;
-                        buildProgressBar();
-                        System.out.println(loadCount + " files of " + selected.listFiles().length + " loaded.");
-                    }
-                }
-                return null;
-            }
-
-            @Override
-            public void done() {
-                listContent.setListData(content.toArray());
-                listContent.updateUI();
-                contentPanel.add(listContent);
-                pack();
-                contentPanel.validate();
-                contentPanel.repaint();
-                contentPanel.updateUI();
-            }
-        };
-        createJList.execute();
     }
 
 
@@ -393,16 +348,23 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             tree.setCellRenderer(renderer);
 
             // Add a listener
-            tree.addTreeSelectionListener(new TreeSelectionListener() {
-                public void valueChanged(TreeSelectionEvent e) {
-                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) e
-                            .getPath().getLastPathComponent();
-                    System.out.println("You selected " + node);
-                    selected = new File(node.toString());
-                    // cPanel.removeAll();
-                    if (node.getChildCount() > 0) buildContent(selected);
-                    //printAll(getGraphics());
+            tree.addTreeSelectionListener(e -> {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) e
+                        .getPath().getLastPathComponent();
+                System.out.println("You selected " + node);
+                selected = new File(node.toString());
+                // cPanel.removeAll();
+                if (node.getChildCount() > 0) {
+                    try {
+                        //SwingUtilities.invokeAndWait(() -> buildContent(selected));
+                        SwingUtilities.invokeLater(() -> buildContent(selected));
+                    } catch (Exception ex) {
+                        System.err.println("buildContent didn't successfully complete");
+                    }
+                    buildContent(selected);
+
                 }
+                //printAll(getGraphics());
             });
 
 
@@ -423,11 +385,11 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             }
             Vector<String> ol = new Vector<>();
             String[] tmp = dir.list();
-            for (int i = 0; i < tmp.length; i++)
-                ol.addElement(tmp[i]);
-            Collections.sort(ol, String.CASE_INSENSITIVE_ORDER);
+            assert tmp != null;
+            for (String aTmp : tmp) ol.addElement(aTmp);
+            ol.sort(String.CASE_INSENSITIVE_ORDER);
             File f;
-            Vector<String> files = new Vector<String>();
+            Vector<String> files = new Vector<>();
             // Make two passes, one for Dirs and one for Files. This is #1.
             for (int i = 0; i < ol.size(); i++) {
                 String thisObject = ol.elementAt(i);
@@ -458,18 +420,23 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             return new Dimension(300, 800);
         }
 
-        public void setSelectedTreeNode(String path) {
+        void setSelectedTreeNode(String path) {
             // Search forward from first visible row looking for any visible node
             // whose name starts with prefix.
             int startRow = 0;
-            String prefix = path;
-            TreePath tPath = tree.getNextMatch(prefix, startRow, Position.Bias.Forward);
+            TreePath tPath = tree.getNextMatch(path, startRow, Position.Bias.Forward);
             tree.setSelectionPath(tPath);
             tree.expandPath(tPath);
         }
     }
 
-
+    /**
+     * calls the sort() function of SortImages class. uses swingWorker to do it in background.
+     * When swingWorker is done with it's work, contentPanel and fileTree will be rebuilt
+     *
+     * @param pathToSort        File path to the directory which will be sorted
+     * @param hoursBetweenFotos int time (hours) or distance(km) to specify when Foto will bnne dropped into a new folder
+     */
     private void sortImagesByDateTime(File pathToSort, int hoursBetweenFotos) {
         // SortImages.sort(hoursBetweenFotos, pathToSort.toPath());
 
@@ -480,6 +447,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
 
                 return null;
             }
+
             protected void done(){
                 buildContent(pathToSort);
                 buildFileTree();
@@ -488,17 +456,21 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         sw.execute();
     }
 
+    /**
+     * actionListener for all the buttons, JList items in this class
+     * @param e ActionEvent given by the instance which calls the actionListener
+     */
     public void actionPerformed(ActionEvent e) {
+        //obj saves the class of the instance which called actionPerformed
         Object obj = e.getSource();
+        //reads the string added to the instance to specify what action will be performed
         String cmd = e.getActionCommand();
-        /*
-        folder-Button:
-         opens filechooser to choose directory to sort
-         save chosen directory in sourceDir
-         */
+
+        //has to be declared here, else we can't close JDialog when button is clicked
+        JDialog sortjd;
+
         if (obj instanceof JButton) {
-            //toolbar
-            //Button to choose the folder which should be sorted
+            //folder-Button: opens filechooser to choose directory to sort, saves chosen directory in File selected
             if (cmd.equals("chooseFolder")) {
                 System.out.println("chooseFolder clicked");
                 //opens the pop up window to search through the local stored folders.
@@ -518,14 +490,19 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                     fileTree.setSelectedTreeNode(selected.getAbsolutePath());
 
                     //creates new runnable = loads in background
-                    SwingUtilities.invokeLater(() -> buildContent(selected));
+                    // SwingUtilities.invokeLater(() -> buildContent(selected));
+                    //SwingUtilities.invokeLater(() -> buildContent(selected));
+                    buildContent(selected);
+                    Thread t1 = new Thread(new LoadImgThread());
+                    t1.start();
                 }
             }
             //made by Jana Seemann
+            //opens JDialog to specify settings for sorting
             if (cmd.equals("sort")) {
-                System.out.println("Sortieren clicked");
+                //System.out.println("Sortieren clicked");
 
-                JDialog sortjd = new JDialog();
+                sortjd = new JDialog();
                 sortjd.setLayout(new FlowLayout(FlowLayout.CENTER, 30, 30));
 
                 sortjd.setSize(400, 400);
@@ -533,28 +510,33 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                 sortjd.setModal(true);
                 sortjd.add(new JLabel("<html><body> Nach welchen Kriterien wollen Sie sortieren?                       <br>  </body></html>"));
 
+                //creates and adds radioButtons to the JDialog to specify if sorted by date/time or location
                 JRadioButton radioButtonByDate = new JRadioButton("nach Datum / Zeitabstand sortieren");
                 JRadioButton radioButtonByLocation = new JRadioButton("nach Ort sortieren");
 
                 radioButtonByDate.setEnabled(true);
+                radioButtonByDate.setSelected(true);
                 radioButtonByLocation.setEnabled(false);
 
+                //creates a buttonGroup
                 ButtonGroup sortBybg = new ButtonGroup();
                 sortBybg.add(radioButtonByDate);
                 sortBybg.add(radioButtonByLocation);
 
+                //adds radioButtons to JDIalog
                 sortjd.add(radioButtonByDate);
                 sortjd.add(radioButtonByLocation);
 
+                //adds a textLabel and formatted Texfield (where only integers can be written in) to JDialog
                 sortjd.add(new JLabel("Bitte Abstand (Stunden bzw. km) eingeben: "));
                 hoursTextfield = new JFormattedTextField(amountHoursFormat);
-                hoursTextfield.setValue(new Integer(6));
+                hoursTextfield.setValue(6);
                 hoursTextfield.setColumns(10);
                 hoursTextfield.addPropertyChangeListener("hours", this);
                 // hoursTextfield.setMinimumSize(new Dimension(100, 15));
                 sortjd.add(hoursTextfield);
 
-
+                //Button to start sorting
                 JButton sortByDate = new JButton("jetzt sortieren!");
                 sortByDate.setActionCommand("sortNow");
                 sortByDate.addActionListener(this);
@@ -570,9 +552,10 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             //if pressed, optionPane opens to check if the right folder and distance between taken fotos are specified.
             // then calls method to sort
             if (cmd.equals("sortNow")) {
-                String textInput = hoursTextfield.getText();
+
                 hoursBetweenFotos = ((Number) hoursTextfield.getValue()).intValue();
 
+                //opens JOptionPane to ask the user if he is sure he wants to sort by given values
                 new JOptionPane();
                 int n = JOptionPane.showConfirmDialog(this, "Alle Fotos aus dem Ordner \n"
                                 + selected.getAbsolutePath() + "\ndie mehr als " + hoursBetweenFotos + " Std / km voneinander entfernt aufgenommen wurden\n" +
@@ -580,12 +563,16 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                                 "Sind Sie sicher, dass Sie das tun wollen?",
                         "Sind Sie sich sicher? ", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
                 if (n == JOptionPane.YES_OPTION) {
+                    //disposes the JOptionPane where user has specified criteria to sort
+                    //sortjd.dispose();
                     sortImagesByDateTime(selected, hoursBetweenFotos);
                 }
             }
 
             if (cmd.equals("undo")) {
                 SortImages.undoChanges();
+                buildContent(selected);
+                buildFileTree();
             }
         }
         //labels in contentpanel
@@ -658,5 +645,42 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                 }
             }
         }*/
+
+    class LoadImgThread implements Runnable {
+        @Override
+        public void run() {
+            for (int i = 0; i < content.size(); i++) {
+
+                //if file is directory, an image of a directory will be pushed in the array of thumbnails on the same position as the file is
+                if (content.get(i).isDirectory()) {
+                    try {
+                        thumbnails.add(ImageIO.read(getClass().getResource("folder.png")));//new ImageIcon(getClass().getResource("folder.png")));
+                    } catch (IOException e) {
+
+                        System.out.println("folder.png");
+                        e.printStackTrace();
+                    }
+                }
+                //if file is an image (jpg) or movie (mp4) it creates a Foto, gets the thumbnail of it an pushes it into the array of thumbnails
+                //clas Foto will check if it's a jpg or mp4 and will return a scaled instance or an icon for movies.
+                else if (content.get(i).isFile() && (content.get(i).getName().toLowerCase().endsWith("jpg") || content.get(i).getName().toLowerCase().endsWith("jpeg")
+                        || content.get(i).getName().toLowerCase().endsWith("mp4") || content.get(i).getName().toLowerCase().endsWith("mpeg4"))) {
+
+                    thumbnails.add(new Foto(content.get(i).getAbsolutePath()).getThumbnail());
+                } else {
+                    try {
+                        thumbnails.add(ImageIO.read(getClass().getResource("picture.png")));
+                    } catch (IOException e) {
+                        System.out.println("picture.png");
+                        e.printStackTrace();
+                    }
+                }
+
+                //  loadCount++;
+                //buildProgressBar();
+                System.out.println(loadCount + " files of " + content.size() + " loaded.");
+            }
+        }//end of run()
+    }//end of SubClass
 }
 

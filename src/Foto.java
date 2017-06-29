@@ -1,27 +1,13 @@
-import com.drew.imaging.ImageMetadataReader;
-import com.drew.imaging.ImageProcessingException;
-import com.drew.metadata.Directory;
-import com.drew.metadata.Metadata;
-import com.drew.metadata.MetadataReader;
-import com.drew.metadata.Tag;
-import com.drew.metadata.exif.ExifIFD0Directory;
-import com.drew.metadata.exif.ExifSubIFDDirectory;
-
-
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Comparator;
 import java.util.Date;
-import java.io.FilenameFilter;
 
 
 /**
@@ -36,95 +22,37 @@ public class Foto {
     private ImageIcon image;
     private Image thumbnail;
     private File dir;
-    private File newDir;
-    private Metadata meta;
-    protected int id;
-    private Date creationDateTime;
 
-    // private Path newDir;
-    //private Metadata meta;
-    //private Path path;
-    //private String fileName;
 
     /**
      * creates new instance of class "foto" on base of path and filename of the foto.
-     * checks if file is a foto (jpg or jpeg), reads metadata and saves it as Metadata.
+     * calls method to create thumbnail
      *
      * @param path     path of the foto
      * @param filename filename of the foto
      */
-    public Foto(String path, String filename) {
+    Foto(String path, String filename) {
         dir = new File(path);
         file = new File(dir, filename);
         //creationDateTime = getCreationDateTime();
 
-        if (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg")) {
-            int maxWidth = 91;
-            int maxHeight = 52;
-
-            image = new ImageIcon(path + filename);
-            int imgWidth = image.getIconWidth();
-            int imgHeight = image.getIconHeight();
-
-            if (imgHeight > imgWidth) {
-                int save = maxHeight;
-                maxHeight = maxWidth;
-                maxWidth = maxHeight;
-            }
-            thumbnail = Toolkit.getDefaultToolkit().getImage(path + filename)
-                    .getScaledInstance(maxWidth, maxHeight, Image.SCALE_SMOOTH);
-            //.getScaledInstance((int) ((image.getIconWidth() * 1.5) / 100) + 1, (int) ((image.getIconHeight() * 1.5) / 100) + 1, Image.SCALE_SMOOTH);
-            try {
-                meta = ImageMetadataReader.readMetadata(file);
-                // showMetadata();
-
-            } catch (ImageProcessingException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                System.out.println("Constructor implementing meta: ");
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                thumbnail = ImageIO.read(getClass().getResource("video.png"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        //setThumbnail();
     }
 
-
-    public Foto(String filename) {
+    /**
+     * constructor of class Foto. saves picture/video in File file, saves parent directory in File dir
+     * calls method to create thumbnail
+     *
+     * @param filename of the foto/video (String)
+     */
+    Foto(String filename) {
         //
         //
         // System.out.println(path.toString()+ filename);
         file = new File(filename);//"C:\\Users\\Chrissi\\Pictures\\imagesTest\\1-111.jpg");
         dir = file.getParentFile();
+        //setThumbnail();
         // creationDateTime = getCreationDateTime();
-
-
-        if (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg")) {
-            image = new ImageIcon(file.getAbsolutePath());
-            thumbnail = Toolkit.getDefaultToolkit().getImage(file.getAbsolutePath())
-                    .getScaledInstance((int) ((image.getIconWidth() * 1.5) / 100) + 1, (int) ((image.getIconHeight() * 1.5) / 100) + 1, Image.SCALE_SMOOTH);
-            try {
-                meta = ImageMetadataReader.readMetadata(file);
-                // showMetadata();
-
-            } catch (ImageProcessingException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                System.out.println("Constructor implementing meta: ");
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                thumbnail = ImageIO.read(getClass().getResource("video.png"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
     }
 
     public Foto(File path, String filename) {
@@ -134,59 +62,8 @@ public class Foto {
         file = new File(path, filename);//"C:\\Users\\Chrissi\\Pictures\\imagesTest\\1-111.jpg");
         dir = file.getParentFile();
         //creationDateTime = getCreationDateTime();
-        if (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg")) {
-            image = new ImageIcon(path.toString() + "" + filename);
-            thumbnail = Toolkit.getDefaultToolkit().getImage(path + filename)
-                    .getScaledInstance((int) ((image.getIconWidth() * 1.5) / 100) + 1, (int) ((image.getIconHeight() * 1.5) / 100) + 1, Image.SCALE_SMOOTH);
-            try {
-                meta = ImageMetadataReader.readMetadata(file);
-                showMetadata();
-
-            } catch (ImageProcessingException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                System.out.println("Constructor implementing meta: ");
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                thumbnail = ImageIO.read(getClass().getResource("video.png"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        //setThumbnail();
     }
-/*
-    /**
-     * constructor of class foto.
-     * creates new instance of class "foto" on base of path and filename of the foto.
-     * checks if file is a foto (jpg or jpeg), reads metadata and saves it as Metadata.
-     *
-     * @param id       id of the foto
-     * @param path     path to the foto
-     * @param fileName filename
-     */
-/*
-    public Foto(int id, String path, String fileName) {
-        dir = new File(path);
-        file = new File(dir, fileName);
-        this.id = id;
-
-        image = new ImageIcon(path + fileName);
-        thumbnail = Toolkit.getDefaultToolkit().getImage(path + fileName)
-                .getScaledInstance((int) ((image.getIconWidth() * 1.5) / 100) + 1, (int) ((image.getIconHeight() * 1.5) / 100) + 1, Image.SCALE_SMOOTH);
-
-        try {
-            meta = ImageMetadataReader.readMetadata(file);
-            //showMetadata();
-
-        } catch (ImageProcessingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            System.out.println("Constructor implementing meta: " + e);
-            e.printStackTrace();
-        }
-    }*/
 
 /*
     public static class CompDate implements Comparator<Foto> {
@@ -210,13 +87,39 @@ public class Foto {
     }*/
 
     /**
-     * returns a scaled instance of the foto
-     *
-     * @return scaled instance of foto
+     * if Instance is a jpg file, thumbnail will be a scaled instance of the jpg.
+     * if it is a mp4 video file, thumbnail will be the video.png file in src folder.
      */
-    public ImageIcon getThumbnail() {
-        return new ImageIcon(thumbnail);
+    Image getThumbnail() {
+        //checks if suffix is "jpg" or "jpeg"
+        if (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg")) {
+            image = new ImageIcon(file.getAbsolutePath());
+            int height, width;
+            int maxWidth = 91;
+            int maxHeight = 52;
+            if (image.getIconHeight() > image.getIconWidth()) {
+                width = maxHeight;
+                height = maxWidth;
+            } else {
+                height = maxHeight;
+                width = maxWidth;
+            }
+            thumbnail = Toolkit.getDefaultToolkit().getImage(file.getAbsolutePath())
+                    .getScaledInstance(width, height, Image.SCALE_SMOOTH);
+
+        } else if (file.getName().toLowerCase().endsWith("mp4") || file.getName().toLowerCase().endsWith("mpeg4")) {
+            try {
+                thumbnail = ImageIO.read(getClass().getResource("video.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return thumbnail;
     }
+
+    /* public ImageIcon getThumbnail() {
+        return new ImageIcon(thumbnail);
+    }*/
 
     /**
      * returns the foto as image file
@@ -225,12 +128,13 @@ public class Foto {
     public Image getImage() {
         return Toolkit.getDefaultToolkit().getImage(image.getAccessibleContext().toString());
     }
+
     /**
      * moves file to given path
      *
      * @param path path where file is moved to
      */
-    public void moveFile(String path) {
+    void moveFile(String path) {
         try {
             //check if another file with same filename already exists. if not, just move to the new dir
             if (!(new File(path, file.getName()).exists())) {
@@ -256,57 +160,43 @@ public class Foto {
         }
     }
 
-    /*
-    public void moveBackFile() {
-        try {
-            if (file.renameTo(new File(dir.getAbsolutePath(), file.getName()))) {
-                System.out.println("File moved back successfully!");
-            } else {
-                System.out.println("File is failed to move!");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    */
-    //shows metadata of the foto
+
+    /**
+     * prints metaData of Foto in terminal
+     */
     public void showMetadata() {
-        for (Directory directory : meta.getDirectories()) {
-            for (Tag tag : directory.getTags()) {
-                System.out.format("[%s] - %s = %s \n", directory.getName(), tag.getTagName(), tag.getDescription());
-            }
-            if (directory.hasErrors()) {
-                for (String error : directory.getErrors()) {
-                    System.err.format("ERROR: %s", error);
-                }
-            }
+        BasicFileAttributes atr;
+        try {
+            atr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+            System.out.println("created: " + atr.creationTime());
+            System.out.println("last modified: " + atr.lastModifiedTime());
+            System.out.println("last access: " + atr.lastAccessTime());
+            System.out.println("is directory : " + atr.isDirectory());
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
     /**
      * returns date and time when foto or video was created
      *
-     * @return date and time of creation (Date)
+     * @return (Date) date and time of creation
      */
-    public Date getCreationDateTime() throws IOException {
-        if (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg")) {
-            ExifSubIFDDirectory directory = meta.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
-            return directory.getDateOriginal();
-            //if its not an image, it's a video (check is done in SortImages)
-        } else {
-            Path vid = file.toPath();
-            System.out.println("vid path: " + vid.getFileName());
+    Date getCreationDateTime() throws IOException {
+
+        //System.out.println("vid path: " + vid.getFileName());
             Date vidCreaDate;
             BasicFileAttributes atr;
             //  try {
-            atr = Files.readAttributes(vid, BasicFileAttributes.class);
+        atr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
             vidCreaDate = new Date(atr.creationTime().toMillis());
             Date vidLastModDate = new Date(atr.lastModifiedTime().toMillis());
             if (vidCreaDate.getTime() > vidLastModDate.getTime()) {
                 vidCreaDate = vidLastModDate;
             }
             //System.out.printf("atr.creationTime(): %s%n", atr.creationTime().toMillis() +"\n)");
-            System.out.printf("vid CreaDate: %s%n", vidCreaDate);
+        //System.out.printf("vid CreaDate: %s%n", vidCreaDate);
             return vidCreaDate;
            /* } catch (IOException e) {
                 System.out.println("Problems with reading attributes of vid: " + file.getAbsolutePath());
@@ -315,12 +205,12 @@ public class Foto {
             }*/
 
         }
-    }
+
 
     /**
      * returns filename of the foto as string
      *
-     * @return filename
+     * @return (String) filename
      */
     public String getFilename() {
         return file.getName();
@@ -329,20 +219,12 @@ public class Foto {
     /**
      * returns directory of foto as string
      *
-     * @return directory
+     * @return (String) directory
      */
     public String getDirectory() {
         return dir.getAbsolutePath();
     }
-/*
-    /**
-     * returns id of foto as int
-     *
-     * @return id
-     */
- /*   public int getId() {
-        return id;
-    }*/
+
 }
 
 

@@ -1,13 +1,8 @@
 import javax.swing.*;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
-import java.nio.file.attribute.DosFileAttributes;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
+import java.util.*;
 
 
 /**
@@ -16,58 +11,89 @@ import java.util.Date;
  * <p>
  * Created by Chrissi on 11.05.2017.
  */
-public class SortImages {
+class SortImages {
     //arraylist where the fotos are saved
     private static ArrayList<Foto> fotos;
     //arrayList where the paths of subdirectories are saved
     private static ArrayList<Path> subDirs;
     //the path to the directory of the fotos to sort
     private static Path sourcePath;
-    private String newSubDir;
     //distance between Takes of the images
     private static int distance;
 
-    public static void sort(int distanceBetweenTakes, Path dir) throws IOException {
+    static void sort(int distanceBetweenTakes, Path dir) throws IOException {
         fotos = new ArrayList<>();
         subDirs = new ArrayList<>();
         sourcePath = dir;
         distance = distanceBetweenTakes;
 
-        //Manager manager = new Manager();
 
-        // manager.initialize();
-        //manager.createDbSchema();
+        //Background task for loading images.
+        SwingWorker worker = new SwingWorker<ArrayList<Foto>, Void>() {
+            @Override
+            public ArrayList<Foto> doInBackground() {
+                try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(sourcePath)) {
+                    for (Path file : directoryStream) {
+                        if (!Files.isDirectory(file)) {
+                            if (file.getFileName().toString().toLowerCase().endsWith("jpg") || file.getFileName().toString().toLowerCase().endsWith("jpeg") ||
+                                    file.getFileName().toString().toLowerCase().endsWith("mp4") || file.getFileName().toString().toLowerCase().endsWith("mpeg4")) {
+                                fotos.add(new Foto(sourcePath.toString(), file.getFileName().toString()));
+                            }   //System.out.println(file.getFileName());
+                        }
+                    }
+                } catch (IOException | DirectoryIteratorException e) {
+                    e.printStackTrace();
+                    System.err.println(e);
+                }
+                System.out.println(fotos.size() + "images / videos added to Foto ArrayList");
 
-        //reads content of the directory, saves every single folder in the subdirs-arrayList
-        // and every jpg-picture in the fotos-ArrayListr
-        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(sourcePath)) {
-            for (Path file : directoryStream) {
-                if (Files.isDirectory(file)) {
-                    // subDirs.add(file);
-                } else if (file.getFileName().toString().toLowerCase().endsWith("jpg") || file.getFileName().toString().toLowerCase().endsWith("jpeg") ||
-                        file.getFileName().toString().toLowerCase().endsWith("mp4") || file.getFileName().toString().toLowerCase().endsWith("mpeg4")) {
-                    fotos.add(new Foto(sourcePath.toString(), file.getFileName().toString()));
-                }   //System.out.println(file.getFileName());
+                Foto[] content = (Foto[]) fotos.toArray();
+                System.out.println("Foto ArrayList before sorting: " + content.length + " items");
+                //System.out.println(Arrays.toString(content));
+                // fotos.sort(Comparator.comparing(Foto::getCreationDateTime));
+                Collections.sort(fotos, (s1, s2) -> {
+                    try {
+                        return s2.getCreationDateTime().compareTo(s1.getCreationDateTime());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+
+                        return 0;
+                    }
+                });
+
+                Foto[] cntAftrSrt = (Foto[]) fotos.toArray();
+                System.out.println("Foto ArrayList after sorting: " + cntAftrSrt.length + " items");
+                //System.out.println(Arrays.toString(cntAftrSrt));
+                return fotos;
             }
-        } catch (IOException | DirectoryIteratorException e) {
-            e.printStackTrace();
-            System.err.println(e);
-        }
-        System.out.println(fotos.size() + "images / videos added to Foto ArrayList");
-        //Sorts the arrayList of fotos by CreationDateTime
 
-        Thread sortCollection = new SortCollThread();
+            @Override
+            public void done() {
+                //Remove the "Loading images" label.
+                for (int i = 0; i < fotos.size(); i++) {
+                    if (i > 0) {
+                        //System.out.println("compareFotos called " + (i + 1) + " times");
+                        try {
+                            compareFotos(fotos.get(i - 1), fotos.get(i));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+            }
+        };
+
+        worker.execute();
+
+       /* Thread sortCollection = new SortCollThread();
+        sortCollection.run();
         if (sortCollection.isAlive()) {
             System.out.println("sortCollection Thread still in progress...");
         } else {
-            for (int i = 0; i < fotos.size(); i++) {
-                if (i > 0) {
-                    compareFotos(fotos.get(i - 1), fotos.get(i));
-                    System.out.println("compareFotos called " + (i + 1) + " times");
-                }
-            }
 
-        }
+
+        }*/
        /*
        SwingWorker<Void, Void> sw = new SwingWorker<Void, Void>() {
            @Override
@@ -84,21 +110,18 @@ public class SortImages {
            }
        };
         sw.execute();*/
-
-
-        //always compares two fotos. calls the compareFoto method
-
     }
 
-    //compares two fotos, checks if they are taken within given time. if so and no folder is created yet,
+    //c
     // creates new folder and moves foto into new folder
 
     /**
-     * Checks if new directory exists if not, creates a new directory
+     * Compares two fotos, checks if they are taken within given time.
+     * Checks if new directory exists. If not, calls createNewSubdir function
+     * moves file(s) to new directory
      *
-     * @param pic1       foto 1 to compare
-     * @param pic2       foto 2 to compare
-
+     * @param pic1 foto 1 to compare
+     * @param pic2 foto 2 to compare
      */
     private static void compareFotos(Foto pic1, Foto pic2) throws IOException {
         //reads date and time when foto was created
@@ -121,15 +144,14 @@ public class SortImages {
             //System.out.println("Subdirs.path = "+subdirs.get(subdirs.size()-1));
 
             pic1.moveFile(subDirs.get((subDirs.size() - 1)).toString());
+            //fotos.remove(0);
             pic2.moveFile(subDirs.get((subDirs.size()) - 1).toString());
 
         } else {
             //if i don't add this option, last foto will not be sorted!!!
             pic1.moveFile(subDirs.get((subDirs.size() - 1)).toString());
-
+            //call function to create new subDir
             createNewSubDir(df.format(pic2Date));
-
-
             //System.out.println("createt new subDir" + df.format(pic2Date));
             //createNewSubDir(sourcePath, df.format(pic2Date), subdirs); */
         }
@@ -139,7 +161,7 @@ public class SortImages {
      * Checks if new directory exists. if not, creates a new directory
      * adds foto to subdirs arrayList
      *
-     * @param newSubDir     Name of new subdirectory that needs to be created
+     * @param newSubDir Name of new subdirectory that needs to be created
      */
     private static void createNewSubDir(String newSubDir) {
         //this.sourcePath = sourcePath;
@@ -149,15 +171,11 @@ public class SortImages {
             try {
 
                 Files.createDirectory(newDir);
-                newDir = Files.setAttribute(newDir, "dos:readonly", false);
-
-                DosFileAttributes attr = Files.readAttributes(newDir, DosFileAttributes.class);
+                //newDir = Files.setAttribute(newDir, "dos:readonly", false);
+                //DosFileAttributes attr = Files.readAttributes(newDir, DosFileAttributes.class);
                 //System.out.println("is readOnly: "+attr.isReadOnly());
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (UnsupportedOperationException x) {
-                System.err.println("DOS file" +
-                        " attributes not supported:" + x);
             }
         }
 
@@ -168,9 +186,7 @@ public class SortImages {
      * walks through the ArrayList of subDirs and moves every file back to sourceDir.
      * After content was moved, directory will be deleted
      */
-    public static void undoChanges() {
-        // for (Path dirs : subDirs.)
-
+    static void undoChanges() {
         for (Path subdir : subDirs) {
             //gets the content of the subdirectory
             try (DirectoryStream<Path> directoryStreamSub = Files.newDirectoryStream(subdir)) {
@@ -190,25 +206,14 @@ public class SortImages {
                 e.printStackTrace();
             }
         }
-
     }
-
+/*
     private static class SortCollThread extends Thread {
         boolean stop = false;
 
         public void run() {
-            System.out.println("Foto ArrayList before sorting: " + fotos.toArray().toString());
-            // fotos.sort(Comparator.comparing(Foto::getCreationDateTime));
-            Collections.sort(fotos, new Comparator<Foto>() {
-                public int compare(Foto s1, Foto s2) {
-                    try {
-                        return s1.getCreationDateTime().compareTo(s2.getCreationDateTime());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    System.out.println("Foto ArrayList after sorting: " + fotos.toArray().toString());
-                    return 0;
-                }
+
+                return 0;
             });
             while (true) {
 
@@ -216,7 +221,6 @@ public class SortImages {
                     return;
                 }
             }
-        }
+        }*/
 
-    }
 }
