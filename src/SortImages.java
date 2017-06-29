@@ -1,4 +1,5 @@
 import javax.swing.*;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.DosFileAttributes;
@@ -17,16 +18,16 @@ import java.util.Date;
  */
 public class SortImages {
     //arraylist where the fotos are saved
-    private ArrayList<Foto> fotos;
+    private static ArrayList<Foto> fotos;
     //arrayList where the paths of subdirectories are saved
-    private ArrayList<Path> subDirs;
+    private static ArrayList<Path> subDirs;
     //the path to the directory of the fotos to sort
-    private Path sourcePath;
+    private static Path sourcePath;
     private String newSubDir;
     //distance between Takes of the images
-    private int distance;
+    private static int distance;
 
-    public void sort(int distanceBetweenTakes, Path dir) throws IOException {
+    public static void sort(int distanceBetweenTakes, Path dir) throws IOException {
         fotos = new ArrayList<>();
         subDirs = new ArrayList<>();
         sourcePath = dir;
@@ -42,20 +43,17 @@ public class SortImages {
         try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(sourcePath)) {
             for (Path file : directoryStream) {
                 if (Files.isDirectory(file)) {
-                    subDirs.add(file);
-                } else if (file.getFileName().toString().toLowerCase().endsWith("jpg") || file.getFileName().toString().toLowerCase().endsWith("jpeg")) {
+                    // subDirs.add(file);
+                } else if (file.getFileName().toString().toLowerCase().endsWith("jpg") || file.getFileName().toString().toLowerCase().endsWith("jpeg") ||
+                        file.getFileName().toString().toLowerCase().endsWith("mp4") || file.getFileName().toString().toLowerCase().endsWith("mpeg4")) {
                     fotos.add(new Foto(sourcePath.toString(), file.getFileName().toString()));
-                    //also adds videos to Foto class. ussually have to change name but too lazy!
-                    //also want the vids to be sorted in same folder as pics... they ussually belong together!!!
-                } else if (file.getFileName().toString().toLowerCase().endsWith("mp4") || file.getFileName().toString().toLowerCase().endsWith("mpeg4")) {
-                    fotos.add(new Foto(sourcePath.toString(), file.getFileName().toString()));
-                }
-                //System.out.println(file.getFileName());
+                }   //System.out.println(file.getFileName());
             }
         } catch (IOException | DirectoryIteratorException e) {
             e.printStackTrace();
             System.err.println(e);
         }
+        System.out.println(fotos.size() + "images / videos added to Foto ArrayList");
         //Sorts the arrayList of fotos by CreationDateTime
 
         Thread sortCollection = new SortCollThread();
@@ -102,13 +100,12 @@ public class SortImages {
      * @param pic2       foto 2 to compare
 
      */
-    private void compareFotos(Foto pic1, Foto pic2) throws IOException {
+    private static void compareFotos(Foto pic1, Foto pic2) throws IOException {
         //reads date and time when foto was created
         Date pic1Date = pic1.getCreationDateTime();
         Date pic2Date = pic2.getCreationDateTime();
         //output format of date and time
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH-mm");
-
         //System.out.println("Pic1: "+df.format(pic1Date)+ ", pic2: "+df.format(pic2Date));
 
         //creates new subdirectory if there's none yet. uses the dateFormatter
@@ -144,7 +141,7 @@ public class SortImages {
      *
      * @param newSubDir     Name of new subdirectory that needs to be created
      */
-    private void createNewSubDir(String newSubDir) {
+    private static void createNewSubDir(String newSubDir) {
         //this.sourcePath = sourcePath;
         // SortImages.newSubDir = newSubDir;
         Path newDir = Paths.get(sourcePath.toString(), newSubDir);
@@ -167,10 +164,40 @@ public class SortImages {
         subDirs.add(newDir);
     }
 
-    private class SortCollThread extends Thread {
+    /**
+     * walks through the ArrayList of subDirs and moves every file back to sourceDir.
+     * After content was moved, directory will be deleted
+     */
+    public static void undoChanges() {
+        // for (Path dirs : subDirs.)
+
+        for (Path subdir : subDirs) {
+            //gets the content of the subdirectory
+            try (DirectoryStream<Path> directoryStreamSub = Files.newDirectoryStream(subdir)) {
+                for (Path cont : directoryStreamSub) {
+                    if (!Files.isDirectory(cont)) {
+                        Foto file1 = new Foto(subdir.toString(), cont.getFileName().toString());
+                        file1.moveFile(sourcePath.toString());//.renameTo(sourcePath + file.getName());
+                    }
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            try {
+                //deletes the directory
+                Files.delete(subdir);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    private static class SortCollThread extends Thread {
         boolean stop = false;
 
         public void run() {
+            System.out.println("Foto ArrayList before sorting: " + fotos.toArray().toString());
             // fotos.sort(Comparator.comparing(Foto::getCreationDateTime));
             Collections.sort(fotos, new Comparator<Foto>() {
                 public int compare(Foto s1, Foto s2) {
@@ -179,6 +206,7 @@ public class SortImages {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                    System.out.println("Foto ArrayList after sorting: " + fotos.toArray().toString());
                     return 0;
                 }
             });

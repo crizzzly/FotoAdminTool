@@ -271,9 +271,6 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             }
         };
         createJList.execute();
-
-
-
     }
 
 
@@ -330,6 +327,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         //---
         JButton chooseFolder = new JButton(new ImageIcon(getClass().getResource("folder.png")));
         JButton sortButton = new JButton(new ImageIcon(getClass().getResource("sort-s.png")));
+        JButton undoChanges = new JButton(new ImageIcon(getClass().getResource("undo.png")));
 
         chooseFolder.setBackground(Color.DARK_GRAY);
         chooseFolder.setForeground(Color.WHITE);
@@ -340,13 +338,16 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         //if you use setActionCommand you don't have to write one actionListener for each actionEvent.
         chooseFolder.setActionCommand("chooseFolder");
         sortButton.setActionCommand("sort");
+        undoChanges.setActionCommand("undo");
 
         //adds actionListener to the items
         chooseFolder.addActionListener(this);
         sortButton.addActionListener(this);
+        undoChanges.addActionListener(this);
 
         bar.add(chooseFolder);
         bar.add(sortButton);
+        bar.add(undoChanges);
   }
     //----
 
@@ -470,9 +471,9 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
 
 
     private void sortImagesByDateTime(File pathToSort, int hoursBetweenFotos) {
-        SortImages.sort(hoursBetweenFotos, pathToSort.toPath());
+        // SortImages.sort(hoursBetweenFotos, pathToSort.toPath());
 
-        /*SwingWorker<Void, Void> sw = new SwingWorker<Void, Void>() {
+        SwingWorker<Void, Void> sw = new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() throws Exception {
                 SortImages.sort(hoursBetweenFotos, pathToSort.toPath());
@@ -484,7 +485,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                 buildFileTree();
             }
         };
-        sw.execute();*/
+        sw.execute();
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -581,6 +582,10 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                 if (n == JOptionPane.YES_OPTION) {
                     sortImagesByDateTime(selected, hoursBetweenFotos);
                 }
+            }
+
+            if (cmd.equals("undo")) {
+                SortImages.undoChanges();
             }
         }
         //labels in contentpanel
