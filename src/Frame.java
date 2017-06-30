@@ -34,11 +34,12 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
     //content panel
     private JScrollPane contentPanel;
     private JList listContent;
-    //private JPanel progressPanel;
+    private JPanel progressPanel;
 
     private ArrayList<Image> thumbnails;
     private ArrayList<File> content;
     private File selected = null;
+    private File lastSeleted = null;
 
     //JDialog for sorting setup
     private int hoursBetweenFotos;
@@ -47,6 +48,10 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
     //counts the loaded images
     private int loadCount;
     private FileTree fileTree;
+
+    private JProgressBar progressBar;
+
+
 
 
     Frame() {
@@ -62,36 +67,42 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
 
         c.setLayout(new BorderLayout());
 
-
+        selected = sourceDir;
         buildToolbar();
         buildFileTree();
         //if (fileTree.getSelected() != null)
+
         buildContentPanel();
-        //buildProgressBar();
+
 
 
         pack();
         setVisible(true);
+        revalidate();
+        repaint();
     }
-    /*
-    private void buildProgressBar() {
-        progressPanel = new JPanel();
-        progressPanel.removeAll();
-        JLabel progress;
 
-        if(content.size() != 0) {
-             progress = new JLabel(loadCount + " images of " + content.size() + " loaded.");
-        }
-        progressPanel.add(progress);
-        //}
-        c.add(progressPanel, BorderLayout.SOUTH);
-        pack();
-        progressPanel.validate();
-        progressPanel.updateUI();
-        progressPanel.updateUI();
 
+    /**
+     * sets the Fototool Frame to visible
+     */
+    public void setVisible(boolean b) {
+        boolean bool = b;
+        if (bool != true)
+            setVisible(true);
+        buildFileTree();
+        buildToolbar();
+        buildContentPanel();
     }
-    */
+
+    /**
+     * retunrs  the number of threads, that are running in background
+     *
+     * @return (int) activeThreads
+     */
+    public int getActiveThreads() {
+        return Thread.activeCount();
+    }
 
     /**
      * build the screen in the middle where all files and directories are shown. perhabs sooon with thumbnail!!
@@ -105,16 +116,18 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
      */
     private void buildContentPanel() {
 
-        //checks if there is a file/folder selected
         if (selected != null) {
-            //SwingUtilities.invokeLater(() -> buildContent(selected));
-            buildContent(selected);
+            //creates new runnable, so it will load pics in background
+
+            SwingUtilities.invokeLater(() -> buildContent(selected));
+        } else {
+            SwingUtilities.invokeLater(() -> buildContent(sourceDir));
         }
 
 
         listContent = new JList<>();
         //listContent.setListData();
-        ListModel listModel = new DefaultListModel();
+        //ListModel listModel = new DefaultListModel();
         //the call to setLayoutOrientation, invoking setVisibleRowCount(-1)
         // makes the list display the maximum number of items possible in the available space
         listContent.setVisibleRowCount(-1);
@@ -149,7 +162,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
 
     //builds the content of the contenPanel
     private void buildContent(File selected) {
-        System.out.println("selected file: " + selected);
+        //  System.out.println("selected file: " + selected);
         listContent.setBackground(Color.DARK_GRAY);
         listContent.setForeground(Color.WHITE);
         listContent.setDragEnabled(true);
@@ -159,9 +172,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
 
 
         loadCount = 0;
-        //buildProgressBar();
-        //progressPanel.removeAll();
-        //progressPanel.updateUI();
+
         //if selected folder contains files or folders, content will be added to content ArrayList<File>
         if (selected.listFiles() != null) {
             assert selected.length() != 0;
@@ -169,9 +180,13 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             content.addAll(Arrays.asList(selected.listFiles()));
         }
 
-        MyThread t1 = new MyThread();
-        t1.run(content);
-        t1.start();
+        if (content.get(0) != lastSeleted) {
+            lastSeleted = content.get(0);
+            MyThread t1 = new MyThread();
+            t1.run(content);
+            t1.start();
+
+        }
 
         listContent.removeAll();
         listContent.setListData(content.toArray());
@@ -184,9 +199,14 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     int index = listContent.locationToIndex(e.getPoint());
-                    //System.out.println("Double clicked on Item " + index);
-                    new ImageViewer(new File(listContent.getModel().getElementAt(index).toString()));// .getAccessibleContext().get
-                    System.out.println("item: " + listContent.getModel().getElementAt(index));
+                    String path = listContent.getModel().getElementAt(index).toString().toLowerCase();
+                    if (path.endsWith("jpg") || path.endsWith("jpeg")) {
+                        //System.out.println("Double clicked on Item " + index);
+                        new ImageViewer(new File(listContent.getModel().getElementAt(index).toString()));// .getAccessibleContext().get
+                        System.out.println("item: " + listContent.getModel().getElementAt(index));
+                    } else {
+                        buildContent(new File(path));
+                    }
 
                 }
             }
@@ -238,7 +258,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
     // creates a thread to run progress in background
     public class MyThread
             extends Thread {
-
+        JProgressBar progressBar;
         /**
          * creates MultiThreads to create thumbnails.
          * To prevent out of memory exceptions, let the threads sleep for 300/600 millisek.
@@ -258,24 +278,28 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             // Prepare to execute and store the Futures
             int threadNum = fileArrayList.size();
             ExecutorService executor = Executors.newFixedThreadPool(threadNum);
-
+            progressBar = new JProgressBar(0, threadNum);
+            //progressBar.setValue(0);
+            progressBar.setStringPainted(true);
             //arrayList for created values in future task
             ArrayList<FutureTask<Integer>> taskList = new ArrayList<FutureTask<Integer>>();
+
+            //inalT
 
             //to prevent out of memory exception, let the threads sleep for 300/600ms
             for (int t = 0; t < threadNum; t++) {
 
                 int finalT = t;
-
-                if ((finalT % 2) == 0) {
+                System.out.println(finalT + " Items of " + threadNum + " loaded");
+                if ((finalT % 20) == 0) {
                     try {
-                        Thread.sleep(300);
+                        Thread.sleep(200);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 } else {
                     try {
-                        Thread.sleep(600);
+                        Thread.sleep(300);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -285,7 +309,6 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                 FutureTask<Integer> futureTask_1 = new FutureTask<Integer>(new Callable<Integer>() {
                     @Override
                     public Integer call() {
-
                         // for (int i = 0; i < content.size(); i++) {
                         //if file is directory, an image of a directory will be pushed in the array of thumbnails on the same position as the file is
                         if (fileArrayList.get(finalT).isDirectory()) {

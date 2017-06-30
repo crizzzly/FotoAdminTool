@@ -55,36 +55,7 @@ public class Foto {
         // creationDateTime = getCreationDateTime();
     }
 
-    public Foto(File path, String filename) {
-        //
-        //
-        // System.out.println(path.toString()+ filename);
-        file = new File(path, filename);//"C:\\Users\\Chrissi\\Pictures\\imagesTest\\1-111.jpg");
-        dir = file.getParentFile();
-        //creationDateTime = getCreationDateTime();
-        //setThumbnail();
-    }
 
-/*
-    public static class CompDate implements Comparator<Foto> {
-        private int mod = 1;
-
-        /**
-         * sorts Fotos by creationDateTime. you can choose if first Foto in the list will be the oldest or youngest
-         * by setting desc (
-         *
-         * @param desc if true, first item will be the youngest. if false, first item will be the oldest.
-         */
-        /*
-        public CompDate(boolean desc) {
-            if (desc) mod =-1;
-        }
-        @Override
-        public int compare(Foto arg0, Foto arg1) {
-            System.out.println("called compareFotos function");
-            return mod*arg0.getCreationDateTime().compareTo(arg1.getCreationDateTime());
-        }
-    }*/
 
     /**
      * if Instance is a jpg file, thumbnail will be a scaled instance of the jpg.
@@ -183,26 +154,24 @@ public class Foto {
      *
      * @return (Date) date and time of creation
      */
-    Date getCreationDateTime() throws IOException {
+    Date getCreationDateTime() {
 
         //System.out.println("vid path: " + vid.getFileName());
-            Date vidCreaDate;
-            BasicFileAttributes atr;
+        Date fileCreationDate;
+        BasicFileAttributes atr = null;
             //  try {
-        atr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-            vidCreaDate = new Date(atr.creationTime().toMillis());
-            Date vidLastModDate = new Date(atr.lastModifiedTime().toMillis());
-            if (vidCreaDate.getTime() > vidLastModDate.getTime()) {
-                vidCreaDate = vidLastModDate;
+        try {
+            atr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+        } catch (IOException e) {
+            //
+        }
+        fileCreationDate = new Date(atr.creationTime().toMillis());
+        Date fileLastModDate = new Date(atr.lastModifiedTime().toMillis());
+        if (fileCreationDate.getTime() > fileLastModDate.getTime()) {
+            fileCreationDate = fileLastModDate;
             }
             //System.out.printf("atr.creationTime(): %s%n", atr.creationTime().toMillis() +"\n)");
-        //System.out.printf("vid CreaDate: %s%n", vidCreaDate);
-            return vidCreaDate;
-           /* } catch (IOException e) {
-                System.out.println("Problems with reading attributes of vid: " + file.getAbsolutePath());
-                e.printStackTrace();
-                return null;
-            }*/
+        return fileCreationDate;
 
         }
 
@@ -224,6 +193,28 @@ public class Foto {
     public String getDirectory() {
         return dir.getAbsolutePath();
     }
+
+
+/*
+    public static class CompDate implements Comparator<Foto> {
+        private int mod = 1;
+
+        /**
+         * sorts Fotos by creationDateTime. you can choose if first Foto in the list will be the oldest or youngest
+         * by setting desc (
+         *
+         * @param desc if true, first item will be the youngest. if false, first item will be the oldest.
+         */
+        /*
+        public CompDate(boolean desc) {
+            if (desc) mod =-1;
+        }
+        @Override
+        public int compare(Foto arg0, Foto arg1) {
+            System.out.println("called compareFotos function");
+            return mod*arg0.getCreationDateTime().compareTo(arg1.getCreationDateTime());
+        }
+    }*/
 
 }
 

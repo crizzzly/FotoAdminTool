@@ -54,10 +54,9 @@ class SortImages {
                 Collections.sort(fotos, (s1, s2) -> {
                     try {
                         return s2.getCreationDateTime().compareTo(s1.getCreationDateTime());
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
-
-                        return 0;
+                        return 1;
                     }
                 });
 
