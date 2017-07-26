@@ -123,19 +123,13 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         if (selected == null){
             selected = sourceDir;
         }
-        System.out.println("(buildCont) selected file: " + selected);
-
-        //atr != null ? atr.creationTime().toMillis() : 0
-        //(selected.listFiles() != null ? selected.listFiles().length : 0)
         if (0 < selected.listFiles().length) {
 
             //creates a File and puts it  in the array of content-files
-            //listModel.addElement(file);
             content.addAll(Arrays.asList(selected.listFiles()));
             MyThread t1 = new MyThread();
             t1.run(content);
             t1.start();
-            //while (t1.isAlive()){}
         }
 
         //add directory content to JList
@@ -195,7 +189,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                 File clicked = new File(listContent.getModel().getElementAt(index).toString());
                 if(clicked.isFile()) {
                     new ImageViewer(clicked);// .getAccessibleContext().get
-                    System.out.println("item: " + listContent.getModel().getElementAt(index));
+                    //System.out.println("item: " + listContent.getModel().getElementAt(index));
                 }
                 else{
                     fileTree.tree.clearSelection();
@@ -290,7 +284,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                         if (fileArrayList.get(finalT).isDirectory()) {
                             try {
                                 thumbnails.add(ImageIO.read(getClass().getResource("folder.png")));//new ImageIcon(getClass().getResource("folder.png")));
-                                System.out.println("added folder thumb");
+                                //System.out.println("added folder thumb");
 
                             } catch (IOException e) {
                                 e.printStackTrace();
@@ -304,7 +298,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                                     || fileArrayList.get(finalT).getName().toLowerCase().endsWith("png")) {
                                 try {
                                     thumbnails.add(new Foto(fileArrayList.get(finalT).getAbsolutePath()).getThumbnail());
-                                    System.out.println("added photo thumb");
+                                    //System.out.println("added photo thumb");
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
@@ -312,7 +306,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                             else if (fileArrayList.get(finalT).getName().toLowerCase().endsWith("mp4")) {
                                 try {
                                     thumbnails.add(ImageIO.read(getClass().getResource("video.png")));
-                                    System.out.println("added video thumb");
+                                    //System.out.println("added video thumb");
 
                                 } catch (IOException e) {
                                     e.printStackTrace();
@@ -320,7 +314,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                             } else if (fileArrayList.get(finalT).getName().toLowerCase().endsWith("mpeg4")) {
                                 try {
                                     thumbnails.add(ImageIO.read(getClass().getResource("video.png")));
-                                    System.out.println("added video thumb");
+                                    //System.out.println("added video thumb");
 
                                 } catch (IOException e) {
                                     e.printStackTrace();
@@ -328,7 +322,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                             } else {
                                 Icon sysIco = FileSystemView.getFileSystemView().getSystemIcon(fileArrayList.get(finalT));
                                 thumbnails.add(((ImageIcon) sysIco).getImage());
-                                System.out.println("added sysIcon thumb");
+                                //.out.println("added sysIcon thumb");
 
                             }
                         }
@@ -603,7 +597,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         if (obj instanceof JButton) {
             //folder-Button: opens filechooser to choose directory to sort, saves chosen directory in File selected
             if (cmd.equals("chooseFolder")) {
-                System.out.println("chooseFolder clicked");
+                //System.out.println("chooseFolder clicked");
                 //opens the pop up window to search through the local stored folders.
                 JFileChooser fc = new JFileChooser();
                 //first directory shown when the file chooser window is opened
@@ -714,10 +708,10 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         //labels in contentpanel
         if (obj instanceof JList) {
             if (cmd.equals("folder")) {
-                System.out.println("klicked on folder");
+              //  System.out.println("klicked on folder");
             }
             if (cmd.equals("picture")) {
-                System.out.println("klicked on picture");
+               // System.out.println("klicked on picture");
             }
         }
     }
@@ -725,12 +719,10 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         Object source = evt.getSource();
-        System.out.println("called PropertyChangeListener.");
 
         if (source == hoursTextfield) {
             hoursBetweenFotos = ((Number) hoursTextfield.getValue()).intValue();
-            System.out.println("Amount of hours changed to: " + hoursBetweenFotos);
-        }
+           }
     }
 
 

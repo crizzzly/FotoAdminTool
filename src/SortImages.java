@@ -60,7 +60,6 @@ class SortImages {
             }
         });
 
-        System.out.println("Foto ArrayList after sorting: " + fotos.size() + " items");
 
         System.out.println("comparing... array size: " + fotos.size());
         for (int i = 0; i < fotos.size(); i++) {
@@ -90,8 +89,6 @@ class SortImages {
         //output format of date and time
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH-mm");
 
-        System.out.println("pic1 created: " + df.format(pic1Date));
-        System.out.println("pic1 created: " + df.format(pic2Date));
         Date timeBetween = new Date(pic2Date.getTime() - pic1Date.getTime());
 
 
@@ -104,22 +101,15 @@ class SortImages {
         //if not, another subdirectory will be created
 
         if (timeBetween.getTime() < (distance * 3600 * 1000)) { // 6 Std. getTime liefert Zeit in Millisekunden zurück
-            //System.out.println("Subdirs.path = "+subdirs.get(subdirs.size()-1));
-            System.out.println("time between pics(dd HH-mm): " + timeBetween.getTime());// daysHours.format(timeBetween));
-            System.out.println("distance in(dd HH-mm):       " + (distance * 60 * 60 * 1000));//daysHours.format(distance*60*60*1000));
             fotos.set(index - 1, moveFile(subDirs.get((subDirs.size() - 1)).toAbsolutePath(), pic1));
             fotos.set(index, moveFile(subDirs.get((subDirs.size()) - 1).toAbsolutePath(), pic2));
-            //System.out.println("File2 path: " + subDirs.get(subDirs.size() - 1).toString() + " Filename: " + pic2.getFilename());
-
-        } else {
+         }
+        else {
             //if i don't add this option, last foto will not be sorted!!!
-           // fotos.set(index - 1, moveFile(subDirs.get((subDirs.size() - 1)).toAbsolutePath(), pic1));
-
             //call function to create new subDir & move 2nd pic
             createNewSubDir(df.format(pic2Date));
             fotos.set(index, moveFile(subDirs.get((subDirs.size() - 1)).toAbsolutePath(), pic2));
-            System.out.println("createt new subDir" + df.format(pic2Date));
-        }
+         }
     }
 
     /**

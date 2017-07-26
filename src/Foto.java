@@ -47,13 +47,9 @@ public class Foto {
      * @param filename of the foto/video (String)
      */
     Foto(String filename) {
-        //
-        //
-        // System.out.println(path.toString()+ filename);
+
         file = new File(filename);
         dir = file.getParentFile();
-        //setThumbnail();
-        // creationDateTime = getCreationDateTime();
     }
 
     Foto (File file){
@@ -143,7 +139,6 @@ public class Foto {
      */
     Date getCreationDateTime() {
 
-        System.out.println("Foto getTime path: " + file.getAbsolutePath());
         Date fileCreationDate;
         BasicFileAttributes atr = null;
             //  try {
@@ -159,7 +154,6 @@ public class Foto {
         if (fileCreationDate.getTime() > fileLastModDate.getTime()) {
             fileCreationDate = fileLastModDate;
             }
-            //System.out.printf("atr.creationTime(): %s%n", atr.creationTime().toMillis() +"\n)");
         return fileCreationDate;
 
         }
