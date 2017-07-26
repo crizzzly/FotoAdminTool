@@ -1,8 +1,12 @@
 package ImageViewer;
 
+import org.imgscalr.Scalr;
+
 import java.awt.*;
 import java.awt.image.*;
-import javax.swing.*;
+import java.io.IOException;
+import javax.imageio.ImageIO;
+import javax.imageio.stream.ImageInputStream;
 
 /**
  * OFImage is a class that defines an image in OF (Objects First) format.
@@ -19,6 +23,33 @@ public class OFImage extends BufferedImage {
     public OFImage(BufferedImage image) {
         super(image.getColorModel(), image.copyData(null),
                 image.isAlphaPremultiplied(), null);
+    }
+
+    public BufferedImage getScaledInstance(BufferedImage image, int maxSize){
+        BufferedImage inputImg = image;
+        BufferedImage outputImg = null;
+
+
+        int resWidth = 64;
+        int resHeight = 64;
+
+        int origWidth = inputImg.getWidth();
+        int origHeight = inputImg.getHeight();
+
+        //check if scale is needed
+        if(origWidth <= maxSize && origHeight <= maxSize){
+            return  inputImg;
+        } else {
+            Scalr.Mode scaleMode = Scalr.Mode.AUTOMATIC;
+
+            int maxSize1 = 0;
+            if (origHeight < origWidth){
+                scaleMode = Scalr.Mode.FIT_TO_WIDTH;
+                } else if (origWidth < origHeight){
+                scaleMode = Scalr.Mode.FIT_TO_HEIGHT;
+              }
+            return  Scalr.resize(inputImg, Scalr.Method.SPEED, scaleMode, maxSize);
+        }
     }
 
     /**

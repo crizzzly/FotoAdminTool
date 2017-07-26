@@ -34,6 +34,10 @@ public class ImageViewer implements TreeSelectionListener {
     private JLabel filenameLabel;
     private JLabel statusLabel;
     private OFImage currentImage;
+    private BufferedImage scaledImage;
+    private Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
+    private int maxSize;
+
 
     /**
      * Create an ImageViewer show it on screen.
@@ -51,14 +55,18 @@ public class ImageViewer implements TreeSelectionListener {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("loaded bufferedImage: " + Arrays.toString(image.getPropertyNames()));
 
         // currentImage = new OFImage(image);
         currentImage = new OFImage(image);//ImageFileManager.loadImage(file);//new OFImage(image);
+        System.out.println("loaded bufferedImage: " + Arrays.toString(currentImage.getPropertyNames()));
         assert currentImage != null;
         //showFilename(file.getName());
         makeFrame();
-        imagePanel.setImage(currentImage);
+        if(d.height > d.width) maxSize = 5*d.height/6;
+        else maxSize = 5*d.width/6;
+
+        OFImage scImage = new OFImage(currentImage.getScaledInstance(image, maxSize));
+        imagePanel.setImage(scImage);
 
     }
 
@@ -210,8 +218,8 @@ public class ImageViewer implements TreeSelectionListener {
         showFilename(null);
         frame.pack();
 
-        Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
-        frame.setLocation(d.width / 2 - frame.getWidth() / 2, d.height / 2 - frame.getHeight() / 2);
+        frame.setLocation(d.width / 4 - frame.getWidth() / 4, d.height / 4 - frame.getHeight() / 4);
+        frame.setSize((3* d.width/4), (3*d.height/4) );
         frame.setVisible(true);
     }
 

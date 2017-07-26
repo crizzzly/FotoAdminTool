@@ -1,11 +1,6 @@
 
 import javax.swing.*;
 
-import java.util.Random;
-
-import static javafx.scene.input.KeyCode.O;
-
-
 /**
  * Sets up Look & feel
  * creates instance of Frame
@@ -27,22 +22,23 @@ public class Main {
             setVisible(true);
         }
         */
+
     public static void main(String[] args) {
       /* Use an appropriate Look and Feel */
         try {
             //UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-            UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (UnsupportedLookAndFeelException | IllegalAccessException | ClassNotFoundException | InstantiationException ex) {
             ex.printStackTrace();
         }
         /* Turn off metal's use of bold fonts */
-        UIManager.put("swing.boldMetal", Boolean.FALSE);
+        //UIManager.put("swing.", Boolean.FALSE);
 
 
         new Frame();
         //frame.setVisible(true);
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> SortImages.undoChanges()));
+        Runtime.getRuntime().addShutdownHook(new Thread(SortImages::undoChanges));
 
         // Ende Code Part ----------------------------------------------------------------------------------------------------
 

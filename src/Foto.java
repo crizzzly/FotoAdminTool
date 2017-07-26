@@ -1,19 +1,15 @@
 import org.imgscalr.Scalr;
-
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
 import javax.swing.*;
-import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
-import java.util.Iterator;
+
+import static java.awt.Toolkit.*;
 
 
 /**
@@ -21,7 +17,7 @@ import java.util.Iterator;
  */
 
 /**
- * Testkommentar
+ * Testcommentblabla
  */
 public class Foto {
     private File file;
@@ -40,7 +36,6 @@ public class Foto {
     Foto(String path, String filename) {
         dir = new File(path);
         file = new File(dir, filename);
-        //creationDateTime = getCreationDateTime();
 
         //setThumbnail();
     }
@@ -66,7 +61,7 @@ public class Foto {
         dir = new File(file.getPath());
     }
 
-    void createThumbnail(){
+    private void createThumbnail(){
         BufferedImage inputImg = null;
         try {
             inputImg = ImageIO.read(file);
@@ -77,13 +72,13 @@ public class Foto {
         int resWidth = 64;
         int resHeight = 64;
 
+        assert inputImg != null;
         int origWidth = inputImg.getWidth();
         int origHeight = inputImg.getHeight();
 
         //check if scale is needed
-        if(origWidth <= resWidth && origHeight <= resHeight){
-            thumbnail = inputImg;
-        } else {
+        if(origWidth <= resWidth && origHeight <= resHeight) thumbnail = inputImg;
+        else {
             Scalr.Mode scaleMode = Scalr.Mode.AUTOMATIC;
 
             int maxSize = 0;
@@ -95,8 +90,7 @@ public class Foto {
                 maxSize = resHeight;
             }
 
-            BufferedImage outputImg = Scalr.resize(inputImg, Scalr.Method.SPEED, scaleMode, maxSize);
-            thumbnail =  outputImg;
+            thumbnail = Scalr.resize(inputImg, Scalr.Method.SPEED, scaleMode, maxSize);
 
         }
     }
@@ -107,8 +101,7 @@ public class Foto {
      */
     Image getThumbnail() {
 
-        if (thumbnail == null)  createThumbnail();
-
+        if (thumbnail == null) createThumbnail();
 
         return thumbnail;
     }
@@ -121,42 +114,10 @@ public class Foto {
      * returns the foto as image file
      * @return (Image) Foto
      */
-    public Image getImage() {
-        return Toolkit.getDefaultToolkit().getImage(image.getAccessibleContext().toString());
-    }
+    public Image getImage()  {
+        return  (image != null ? getDefaultToolkit().getImage(image.getAccessibleContext().toString()) : null);}
 
-    /**
-     * moves file to given path
-     *
-     * @param path path where file is moved to
-     */
-    /*
-    void moveFile(String path) {
-        try {
-            //check if another file with same filename already exists. if not, just move to the new dir
-            if (!(new File(path, file.getName()).exists())) {
-                if (file.renameTo(new File(path, file.getName()))) {   //newDir.getAbsolutePath(), file.getName()))) {
-                    System.out.println("File " + file.getName() + " is moved successfully!");
-                } else {
-                    System.out.println(file.getName() + " is failed to move!" + path);
-                }
-            }
-            //if a file with the same filename exists, change name of the file
-            else {
-                //perhabs check metadata first!!!!
-                try {
-                    if (file.renameTo(new File(path, file.getName() + "-1"))) {
-                        System.out.println(file.getName() + " needed to be renamed");
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-*/
+
 
     /**
      * prints metaData of Foto in terminal
@@ -191,8 +152,10 @@ public class Foto {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        fileCreationDate = new Date(atr.creationTime().toMillis());
-        Date fileLastModDate = new Date(atr.lastModifiedTime().toMillis());
+        //assert atr != null;
+        fileCreationDate = new Date(atr != null ? atr.creationTime().toMillis() : 0);
+        //assert atr != null;
+        Date fileLastModDate = new Date(atr != null ? atr.lastModifiedTime().toMillis() : 0);
         if (fileCreationDate.getTime() > fileLastModDate.getTime()) {
             fileCreationDate = fileLastModDate;
             }
@@ -207,13 +170,11 @@ public class Foto {
      *
      * @return (String) filename
      */
-    public String getFilename() {
-        return file.getName();
-    }
+    String getFilename() {return file.getName();}
 
-    public File getFile(){ return file;}
+    File getFile(){ return file;}
 
-    public String getAbsolutePath(){ return file.getAbsolutePath(); }
+    public String getAbsolutePath(){return file.getAbsolutePath();}
 
     /**
      * returns directory of foto as string

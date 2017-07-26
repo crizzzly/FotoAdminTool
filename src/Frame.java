@@ -1,15 +1,14 @@
 //package Gui;
 
 import ImageViewer.ImageViewer;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
-import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Vector;
 import java.util.concurrent.*;
 import javax.imageio.ImageIO;
@@ -29,10 +28,8 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
     private Container c = getContentPane();
 
     //opens the windows standard directory for pictures on startup
-    private File sourceDir = new File("/home/chrissi/Bilder");
+    private File sourceDir;
 
-    //content panel
-    private JScrollPane contentPanel;
     private JList<Object> listContent;
     //private JPanel progressPanel;
 
@@ -45,7 +42,6 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
 
     private int hoursBetweenFotos;
     private JFormattedTextField hoursTextfield;
-    private NumberFormat amountHoursFormat;
 
     //counts the loaded images
     private int loadCount;
@@ -62,9 +58,9 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         setMaximumSize(screenSize);
         setBounds(0, 0, screenSize.width, screenSize.height);
 
-//        c.setSize((int) screenSize.getWidth(), (int) screenSize.getHeight());
-
         c.setLayout(new BorderLayout());
+
+        sourceDir = new File(System.getProperty("user.home")+"/Bilder");
 
 
         buildToolbar();
@@ -116,7 +112,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         listModel.removeAllElements();
 
 
-        listContent = new JList<Object>(listModel);
+        listContent = new JList<>(listModel);
 
         listContent.removeAll();
         content.clear();
@@ -129,17 +125,17 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         }
         System.out.println("(buildCont) selected file: " + selected);
 
-        if (selected.listFiles().length > 0) {
+        //atr != null ? atr.creationTime().toMillis() : 0
+        //(selected.listFiles() != null ? selected.listFiles().length : 0)
+        if (0 < selected.listFiles().length) {
 
             //creates a File and puts it  in the array of content-files
-            for (File file : selected.listFiles()){
-                //listModel.addElement(file);
-                content.add(file);
-            }
+            //listModel.addElement(file);
+            content.addAll(Arrays.asList(selected.listFiles()));
             MyThread t1 = new MyThread();
             t1.run(content);
             t1.start();
-            while (t1.isAlive()){}
+            //while (t1.isAlive()){}
         }
 
         //add directory content to JList
@@ -147,7 +143,6 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
 
         //the call to setLayoutOrientation, invoking setVisibleRowCount(-1) makes the list display the maximum number of items possible in the available space
         listContent.setVisibleRowCount(-1);
-        listContent.updateUI();
 
         // Display an icon and a string for each object in the list.
         class MyCellRenderer extends JLabel implements ListCellRenderer<Object> {
@@ -162,9 +157,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                     boolean isSelected,      // is the cell selected
                     boolean cellHasFocus)    // does the cell have focus
             {
-                if (index >= content.size()){
-                    index = content.size()-1;
-                }
+
 
                 setText(content.get(index).getName());
                 setIcon((new ImageIcon(thumbnails.get(index))));
@@ -213,15 +206,19 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         };
         //adds the mouseListener to the JList
         listContent.addMouseListener(mouseListener);
+        listContent.updateUI();
+
 
 
         //create JScrollPane and add contentPanel
-        contentPanel = new JScrollPane(listContent);
+        JScrollPane contentPanel = new JScrollPane(listContent);
         contentPanel.setLayout(new ScrollPaneLayout());
         //---- change appearance of contentPanel
         contentPanel.setPreferredSize(new Dimension(900, 800));
         contentPanel.setBackground(Color.DARK_GRAY);
         contentPanel.setForeground(Color.WHITE);
+        contentPanel.setWheelScrollingEnabled(true);
+
         //sets the scrollbar. horizontal is turned off, vertical is shown when needed
         contentPanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         contentPanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
@@ -259,7 +256,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             ExecutorService executor = Executors.newFixedThreadPool(threadNum);
 
             //arrayList for created values in future task
-            ArrayList<FutureTask<Integer>> taskList = new ArrayList<FutureTask<Integer>>();
+            ArrayList<FutureTask<Integer>> taskList = new ArrayList<>();
             taskList.clear();
 
             //to prevent out of memory exception, let the threads sleep for 300/600ms
@@ -284,7 +281,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                 }
 
                 // Start thread for the first half of the numbers
-                FutureTask<Integer> futureTask_1 = new FutureTask<Integer>(new Callable<Integer>() {
+                FutureTask<Integer> futureTask_1 = new FutureTask<>(new Callable<Integer>() {
                     @Override
                     public Integer call() {
 
@@ -312,9 +309,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                                     e.printStackTrace();
                                 }
                             }
-                            else if (fileArrayList.get(finalT).getName().toLowerCase().endsWith("mp4")
-                                    || fileArrayList.get(finalT).getName().toLowerCase().endsWith("mpeg4"))
-                            {
+                            else if (fileArrayList.get(finalT).getName().toLowerCase().endsWith("mp4")) {
                                 try {
                                     thumbnails.add(ImageIO.read(getClass().getResource("video.png")));
                                     System.out.println("added video thumb");
@@ -322,8 +317,15 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
-                            }
-                            else {
+                            } else if (fileArrayList.get(finalT).getName().toLowerCase().endsWith("mpeg4")) {
+                                try {
+                                    thumbnails.add(ImageIO.read(getClass().getResource("video.png")));
+                                    System.out.println("added video thumb");
+
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            } else {
                                 Icon sysIco = FileSystemView.getFileSystemView().getSystemIcon(fileArrayList.get(finalT));
                                 thumbnails.add(((ImageIcon) sysIco).getImage());
                                 System.out.println("added sysIcon thumb");
@@ -390,9 +392,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
      * creates a button to set up the location of the folder you want to sort.
      */
     private void buildToolbar() {
-        //Toolbar wird erstellt
         JToolBar bar = new JToolBar();
-        //Größe der Toolbar wird gesetzt
         bar.setSize(230, 20);
 
         bar.setBackground(Color.DARK_GRAY);
@@ -437,8 +437,6 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         JScrollPane treeScrollPane = new JScrollPane();
         fileTree = new FileTree(sourceDir);
         treeScrollPane.getViewport().add(fileTree);
-        //treeScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        //treeScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         c.add(treeScrollPane, BorderLayout.WEST);
     }
 
@@ -507,7 +505,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             String curPath = dir.getPath();
             DefaultMutableTreeNode curDir = new DefaultMutableTreeNode(curPath);
 
-            if (curTop != null) { // should only be null at root
+            if (curTop != null) {
                 curTop.add(curDir);
             }
             Vector<String> ol = new Vector<>();
@@ -662,7 +660,8 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
 
                 //adds a textLabel and formatted Texfield (where only integers can be written in) to JDialog
                 sortjd.add(new JLabel("Bitte Abstand (Stunden bzw. km) eingeben: "));
-                hoursTextfield = new JFormattedTextField(amountHoursFormat);
+
+                hoursTextfield = new JFormattedTextField();
                 hoursTextfield.setValue(6);
                 hoursTextfield.setColumns(10);
                 hoursTextfield.addPropertyChangeListener("hours", this);

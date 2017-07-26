@@ -51,7 +51,7 @@ class SortImages {
             System.err.println(e);
         }
 
-        Collections.sort(fotos, (s1, s2) -> {
+        fotos.sort((s1, s2) -> {
             try {
                 return s1.getCreationDateTime().compareTo(s2.getCreationDateTime());
             } catch (Exception e) {
@@ -89,7 +89,6 @@ class SortImages {
         Date pic2Date = pic2.getCreationDateTime();
         //output format of date and time
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH-mm");
-        SimpleDateFormat daysHours = new SimpleDateFormat("dd HH-mm");
 
         System.out.println("pic1 created: " + df.format(pic1Date));
         System.out.println("pic1 created: " + df.format(pic2Date));
@@ -172,7 +171,7 @@ class SortImages {
      * After content was moved, directory will be deleted
      */
     static void undoChanges() {
-        if (subDirs != null) {
+        if (subDirs!= null) {
             int i = 0;
             for (Path subdir : subDirs) {
                 //gets the content of the subdirectory
