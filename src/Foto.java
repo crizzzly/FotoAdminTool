@@ -1,5 +1,10 @@
+import org.imgscalr.Scalr;
+
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import javax.swing.*;
+import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -8,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
+import java.util.Iterator;
 
 
 /**
@@ -49,42 +55,61 @@ public class Foto {
         //
         //
         // System.out.println(path.toString()+ filename);
-        file = new File(filename);//"C:\\Users\\Chrissi\\Pictures\\imagesTest\\1-111.jpg");
+        file = new File(filename);
         dir = file.getParentFile();
         //setThumbnail();
         // creationDateTime = getCreationDateTime();
     }
 
+    Foto (File file){
+        this.file = file;
+        dir = new File(file.getPath());
+    }
 
+    void createThumbnail(){
+        BufferedImage inputImg = null;
+        try {
+            inputImg = ImageIO.read(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        int resWidth = 64;
+        int resHeight = 64;
+
+        int origWidth = inputImg.getWidth();
+        int origHeight = inputImg.getHeight();
+
+        //check if scale is needed
+        if(origWidth <= resWidth && origHeight <= resHeight){
+            thumbnail = inputImg;
+        } else {
+            Scalr.Mode scaleMode = Scalr.Mode.AUTOMATIC;
+
+            int maxSize = 0;
+            if (origHeight < origWidth){
+                scaleMode = Scalr.Mode.FIT_TO_WIDTH;
+                maxSize = resWidth;
+            } else if (origWidth < origHeight){
+                scaleMode = Scalr.Mode.FIT_TO_HEIGHT;
+                maxSize = resHeight;
+            }
+
+            BufferedImage outputImg = Scalr.resize(inputImg, Scalr.Method.SPEED, scaleMode, maxSize);
+            thumbnail =  outputImg;
+
+        }
+    }
 
     /**
      * if Instance is a jpg file, thumbnail will be a scaled instance of the jpg.
      * if it is a mp4 video file, thumbnail will be the video.png file in src folder.
      */
     Image getThumbnail() {
-        //checks if suffix is "jpg" or "jpeg"
-        if (file.getName().toLowerCase().endsWith("jpg") || file.getName().toLowerCase().endsWith("jpeg")) {
-            image = new ImageIcon(file.getAbsolutePath());
-            int height, width;
-            int maxWidth = 91;
-            int maxHeight = 52;
-            if (image.getIconHeight() > image.getIconWidth()) {
-                width = maxHeight;
-                height = maxWidth;
-            } else {
-                height = maxHeight;
-                width = maxWidth;
-            }
-            thumbnail = Toolkit.getDefaultToolkit().getImage(file.getAbsolutePath())
-                    .getScaledInstance(width, height, Image.SCALE_SMOOTH);
 
-        } else if (file.getName().toLowerCase().endsWith("mp4") || file.getName().toLowerCase().endsWith("mpeg4")) {
-            try {
-                thumbnail = ImageIO.read(getClass().getResource("video.png"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        if (thumbnail == null)  createThumbnail();
+
+
         return thumbnail;
     }
 
@@ -105,6 +130,7 @@ public class Foto {
      *
      * @param path path where file is moved to
      */
+    /*
     void moveFile(String path) {
         try {
             //check if another file with same filename already exists. if not, just move to the new dir
@@ -130,7 +156,7 @@ public class Foto {
             e.printStackTrace();
         }
     }
-
+*/
 
     /**
      * prints metaData of Foto in terminal
@@ -156,14 +182,14 @@ public class Foto {
      */
     Date getCreationDateTime() {
 
-        //System.out.println("vid path: " + vid.getFileName());
+        System.out.println("Foto getTime path: " + file.getAbsolutePath());
         Date fileCreationDate;
         BasicFileAttributes atr = null;
             //  try {
         try {
             atr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
         } catch (IOException e) {
-            //
+            e.printStackTrace();
         }
         fileCreationDate = new Date(atr.creationTime().toMillis());
         Date fileLastModDate = new Date(atr.lastModifiedTime().toMillis());
@@ -185,6 +211,10 @@ public class Foto {
         return file.getName();
     }
 
+    public File getFile(){ return file;}
+
+    public String getAbsolutePath(){ return file.getAbsolutePath(); }
+
     /**
      * returns directory of foto as string
      *
@@ -193,28 +223,6 @@ public class Foto {
     public String getDirectory() {
         return dir.getAbsolutePath();
     }
-
-
-/*
-    public static class CompDate implements Comparator<Foto> {
-        private int mod = 1;
-
-        /**
-         * sorts Fotos by creationDateTime. you can choose if first Foto in the list will be the oldest or youngest
-         * by setting desc (
-         *
-         * @param desc if true, first item will be the youngest. if false, first item will be the oldest.
-         */
-        /*
-        public CompDate(boolean desc) {
-            if (desc) mod =-1;
-        }
-        @Override
-        public int compare(Foto arg0, Foto arg1) {
-            System.out.println("called compareFotos function");
-            return mod*arg0.getCreationDateTime().compareTo(arg1.getCreationDateTime());
-        }
-    }*/
 
 }
 

@@ -30,8 +30,8 @@ public class Main {
     public static void main(String[] args) {
       /* Use an appropriate Look and Feel */
         try {
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-            //UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+            //UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+            UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         } catch (UnsupportedLookAndFeelException | IllegalAccessException | ClassNotFoundException | InstantiationException ex) {
             ex.printStackTrace();
         }
@@ -41,26 +41,8 @@ public class Main {
 
         new Frame();
         //frame.setVisible(true);
-        JWindow window;
 
-        window = new JWindow();
-        //mein Splashscreen Code:---------Jana---------------------------------------------------------------------
-
-
-        window.getContentPane().add(new JLabel("Foto Admin Tool wird geladen",
-                new ImageIcon("C:\\Users\\Chrissi\\Documents\\IoT2\\Java2\\FotoAdminTool\\Projekt\\src\\Startscreen.png"),
-                SwingConstants.CENTER));
-        window.setBounds(450, 200, 500, 400);
-        window.setVisible(true);
-
-        try {
-
-            Thread.sleep(300);
-        } catch (InterruptedException e) {
-
-            window.dispose();
-        }
-
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> SortImages.undoChanges()));
 
         // Ende Code Part ----------------------------------------------------------------------------------------------------
 
