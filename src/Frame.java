@@ -3,7 +3,23 @@
 import ImageViewer.ImageViewer;
 import java.awt.*;
 import java.awt.event.*;
+import org.apache.commons.imaging.Imaging;
+import org.apache.commons.imaging.common.ImageMetadata;
+import org.apache.commons.imaging.common.ImageMetadata.ImageMetadataItem;
+import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
+import org.apache.commons.imaging.formats.tiff.TiffDirectory;
+import org.apache.commons.imaging.formats.tiff.constants.TiffDirectoryType;
+import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
+import org.apache.commons.imaging.formats.tiff.taginfos.TagInfo;
+import org.apache.commons.imaging.formats.tiff.taginfos.TagInfoAscii;
+import org.apache.commons.imaging.formats.tiff.taginfos.TagInfoLong;
+import org.apache.commons.imaging.formats.tiff.taginfos.TagInfoShort;
+import org.apache.commons.imaging.formats.tiff.taginfos.TagInfoXpString;
+import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
+import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
 
+import java.awt.image.BufferedImage;
+import java.io.RandomAccessFile;
 import java.util.Map;
 import java.util.HashMap;
 import java.io.ByteArrayInputStream;
@@ -113,7 +129,6 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
      * for each item in selected, it creates a JLabel and adds it to the contentPane
      */
     private void buildContentPanel() {
-
         content = new ArrayList<>();
         thumbnails = new ArrayList<>();
 
@@ -135,7 +150,6 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         //creates a File and puts it  in the array of content-files
         content.addAll(Arrays.asList(Objects.requireNonNull(selected.listFiles())));
         MyThread t1 = new MyThread();
-        //t1.run(content);
         t1.run(content);
         
 
@@ -161,7 +175,6 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                               content.get(i).getName().toLowerCase().endsWith(".nef") ||
                               content.get(i).getName().toLowerCase().endsWith(".arw") ||
                               content.get(i).getName().toLowerCase().matches(".*\\.(raf|dng|crw|cr3|raw|rw2|pef|srf|sr2|x3f)$")) {
-                        // Handle RAW files
                         thumbnail = createRawThumbnail(content.get(i));
                     } else {
                         // Default icon for unsupported file types
@@ -173,15 +186,16 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                     }
                     
                     // Update the UI on the Event Dispatch Thread
+                    Image finalThumbnail = thumbnail;
                     SwingUtilities.invokeLater(() -> {
                         if (thumbnails.size() > index) {
-                            thumbnails.set(index, thumbnail);
+                            thumbnails.set(index, finalThumbnail);
                         } else {
                             // If the index doesn't exist yet, fill up to that index with nulls
                             while (thumbnails.size() < index) {
                                 thumbnails.add(null);
                             }
-                            thumbnails.add(thumbnail);
+                            thumbnails.add(finalThumbnail);
                         }
                         // Trigger a repaint of just this cell
                         listContent.repaint(listContent.getCellBounds(index, index));
@@ -807,8 +821,103 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         public String getDescription() {
             return "directory";
         }
-
     }
 
+    /**
+     * Creates a thumbnail from a RAW image file (CR2, NEF, ARW, etc.)
+     * @param rawFile The RAW image file
+     * @return Thumbnail as an Image, or default file icon if creation fails
+     */
+    private Image createRawThumbnail(File rawFile) {
+        // Check if the file exists and is readable
+        if (rawFile == null || !rawFile.exists() || !rawFile.canRead()) {
+            return getDefaultFileIcon();
+        }
+
+        // Try to use ImageIO first as it's more reliable for basic formats
+        try {
+            BufferedImage image = ImageIO.read(rawFile);
+            if (image != null) {
+                return scaleImage(image);
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.FINE, "ImageIO failed to read " + rawFile.getName(), e);
+        }
+
+        // If ImageIO fails, try with Apache Commons Imaging if available
+        try {
+            // Check if Imaging class is available
+            Class.forName("org.apache.commons.imaging.Imaging");
+            
+            // Try to read the image directly
+            try {
+                BufferedImage image = Imaging.getBufferedImage(rawFile);
+                if (image != null) {
+                    return scaleImage(image);
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.FINE, "Direct Imaging read failed for " + rawFile.getName(), e);
+            }
+
+            // Try to extract thumbnail from metadata
+            try {
+                ImageMetadata metadata = Imaging.getMetadata(rawFile);
+                if (metadata instanceof TiffImageMetadata) {
+                    TiffImageMetadata tiffMetadata = (TiffImageMetadata) metadata;
+                    
+                    // Try to get the thumbnail from the EXIF directory
+                    TiffDirectory thumbnailDir = tiffMetadata.findDirectory(TiffDirectoryType.EXIF_DIRECTORY_SUB_IFD.directoryType);
+                    if (thumbnailDir != null) {
+                        Object offsetObj = thumbnailDir.getFieldValue(TiffTagConstants.TIFF_TAG_JPEG_INTERCHANGE_FORMAT);
+                        if (offsetObj != null) {
+                            int offset = ((Number) offsetObj).intValue();
+                            Object lengthObj = thumbnailDir.getFieldValue(TiffTagConstants.TIFF_TAG_JPEG_INTERCHANGE_FORMAT_LENGTH);
+                            if (lengthObj != null) {
+                                int length = ((Number) lengthObj).intValue();
+                                try (RandomAccessFile raf = new RandomAccessFile(rawFile, "r")) {
+                                    byte[] thumbnailData = new byte[length];
+                                    raf.seek(offset);
+                                    int bytesRead = raf.read(thumbnailData);
+                                    if (bytesRead > 0) {
+                                        return ImageIO.read(new ByteArrayInputStream(thumbnailData));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.FINE, "Failed to extract thumbnail from metadata: " + e.getMessage());
+            }
+        } catch (ClassNotFoundException e) {
+            LOGGER.log(Level.INFO, "Apache Commons Imaging not found. Limited RAW file support available.");
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Error initializing image processing: " + e.getMessage(), e);
+        }
+
+        // Return default icon if all else fails
+        return getDefaultFileIcon();
+    }
+
+    /**
+     * Scales an image to thumbnail size
+     */
+    private Image scaleImage(BufferedImage image) {
+        int thumbWidth = 100;
+        int thumbHeight = (int) (image.getHeight() * ((double) thumbWidth / image.getWidth()));
+        return image.getScaledInstance(thumbWidth, thumbHeight, Image.SCALE_SMOOTH);
+    }
+
+    /**
+     * Returns the default file icon
+     */
+    private Image getDefaultFileIcon() {
+        try {
+            Image icon = ImageIO.read(Objects.requireNonNull(getClass().getResource("file.png")));
+            return icon != null ? icon : new BufferedImage(100, 75, BufferedImage.TYPE_INT_ARGB);
+        } catch (Exception e) {
+            return new BufferedImage(100, 75, BufferedImage.TYPE_INT_ARGB);
+        }
+    }
 }
 

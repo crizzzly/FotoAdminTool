@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="commons-imaging-1.0.0-alpha6-sources">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Downloads/commons-imaging-1.0.0-alpha6/commons-imaging-1.0.0-alpha6-tests.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/Downloads/commons-imaging-1.0.0-alpha6/commons-imaging-1.0.0-alpha6-sources.jar!/" />
+      <root url="jar://$USER_HOME$/Downloads/commons-imaging-1.0.0-alpha6/commons-imaging-1.0.0-alpha6-test-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
