@@ -3,7 +3,6 @@ package ImageViewer;
 import java.awt.*;
 import java.awt.event.*;
 import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageInputStream;
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
@@ -12,6 +11,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * ImageViewer is the main class of the image viewer application. It builds and
@@ -25,18 +26,18 @@ import java.util.Arrays;
 public class ImageViewer implements TreeSelectionListener {
     // static fields:
     private static final String VERSION = "Version 1.0";
-    private static JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
+    private static final JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
 
     // fields:
     private JFrame frame;
     private ImagePanel imagePanel;
-    private JScrollPane scrollPane;
     private JLabel filenameLabel;
     private JLabel statusLabel;
     private OFImage currentImage;
     private BufferedImage scaledImage;
-    private Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
-    private int maxSize;
+    private final Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
+
+    private static final Logger LOGGER = Logger.getLogger(ImageViewer.class.getName());
 
 
     /**
@@ -53,15 +54,17 @@ public class ImageViewer implements TreeSelectionListener {
         try {
             image = ImageIO.read(file);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to set look and feel", e);
         }
 
         // currentImage = new OFImage(image);
+        assert image != null;
         currentImage = new OFImage(image);//ImageFileManager.loadImage(file);//new OFImage(image);
         System.out.println("loaded bufferedImage: " + Arrays.toString(currentImage.getPropertyNames()));
         assert currentImage != null;
         //showFilename(file.getName());
         makeFrame();
+        int maxSize;
         if(d.height > d.width) maxSize = 5*d.height/6;
         else maxSize = 5*d.width/6;
 
@@ -207,7 +210,7 @@ public class ImageViewer implements TreeSelectionListener {
         contentPane.add(filenameLabel, BorderLayout.NORTH);
 
         imagePanel = new ImagePanel();
-        scrollPane = new JScrollPane();
+        JScrollPane scrollPane = new JScrollPane();
         scrollPane.getViewport().add(imagePanel);
         contentPane.add(scrollPane, BorderLayout.CENTER);
 
@@ -230,7 +233,7 @@ public class ImageViewer implements TreeSelectionListener {
      */
     private void makeMenuBar(JFrame frame) {
         final int SHORTCUT_MASK =
-                Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+                Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
 
 
         JMenuBar menubar = new JMenuBar();

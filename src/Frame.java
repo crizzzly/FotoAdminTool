@@ -3,6 +3,10 @@
 import ImageViewer.ImageViewer;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.Objects;
+import java.util.concurrent.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
@@ -10,7 +14,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
-import java.util.concurrent.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -25,10 +28,10 @@ import javax.swing.DefaultListModel;
  * jajaj ich schreib ja schon was
  */
 public class Frame extends JFrame implements ActionListener, PropertyChangeListener {
-    private Container c = getContentPane();
+    private final Container c = getContentPane();
 
     //opens the windows standard directory for pictures on startup
-    private File sourceDir;
+    private final File sourceDir;
 
     private JList<Object> listContent;
     //private JPanel progressPanel;
@@ -46,8 +49,8 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
     //counts the loaded images
     private int loadCount;
     private FileTree fileTree;
-
-    private Dimension screenSize;
+    private final Dimension screenSize;
+    private static final Logger LOGGER = Logger.getLogger(Frame.class.getName());
 
     Frame() {
 
@@ -60,7 +63,8 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
 
         c.setLayout(new BorderLayout());
 
-        sourceDir = new File(System.getProperty("user.home")+"/Bilder");
+        // TODO: change this to a user-selected directory
+        sourceDir = new File(System.getProperty("user.home")+"/Pictures");
 
 
         buildToolbar();
@@ -72,6 +76,8 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         pack();
         setVisible(true);
     }
+
+
     /*
     private void buildProgressBar() {
         progressPanel = new JPanel();
@@ -110,8 +116,6 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         //creates JList that holds thumbnails and names of files / directories
         DefaultListModel<Object> listModel = new DefaultListModel<>();
         listModel.removeAllElements();
-
-
         listContent = new JList<>(listModel);
 
         listContent.removeAll();
@@ -123,14 +127,13 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         if (selected == null){
             selected = sourceDir;
         }
-        if (0 < selected.listFiles().length) {
 
             //creates a File and puts it  in the array of content-files
-            content.addAll(Arrays.asList(selected.listFiles()));
+            content.addAll(Arrays.asList( Objects.requireNonNull(selected.listFiles())));
             MyThread t1 = new MyThread();
-            t1.run(content);
+            //t1.run(content);
             t1.start();
-        }
+        
 
         //add directory content to JList
         listContent.setListData(content.toArray());
@@ -202,9 +205,16 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         listContent.addMouseListener(mouseListener);
         listContent.updateUI();
 
+        JScrollPane contentPanel = createContentScrollPane();
+        c.add(contentPanel, BorderLayout.CENTER);
+        pack();
+    }
 
-
-        //create JScrollPane and add contentPanel
+    /**
+     * Creates and configures a JScrollPane for the content list.
+     * @return Configured JScrollPane containing the list content
+     */
+    private JScrollPane createContentScrollPane() {
         JScrollPane contentPanel = new JScrollPane(listContent);
         contentPanel.setLayout(new ScrollPaneLayout());
         //---- change appearance of contentPanel
@@ -217,17 +227,13 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         contentPanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         contentPanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         contentPanel.setAutoscrolls(true);
-
         contentPanel.getViewport().updateUI();
-        pack();
-        c.add(contentPanel, BorderLayout.CENTER);
+        
+        return contentPanel;
     }
-
-
+    
     // creates a thread to run progress in background
-    public class MyThread
-            extends Thread {
-
+    private class MyThread extends Thread {
         /**
          * creates MultiThreads to create thumbnails.
          * To prevent out of memory exceptions, let the threads sleep for 300/600 millisek.
@@ -236,116 +242,105 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             super();
         }
 
-        // die run Methode aus Thread
-        // überschreiben
 
         /**
          * @param fileArrayList ArrayList<File> with contents of the folder
          */
         void run(ArrayList<File> fileArrayList) {
-
-
             // Prepare to execute and store the Futures
             int threadNum = fileArrayList.size();
-            ExecutorService executor = Executors.newFixedThreadPool(threadNum);
+            try (ExecutorService executor = Executors.newFixedThreadPool(threadNum)) {
+                //arrayList for created values in future task
+                ArrayList<FutureTask<Integer>> taskList = new ArrayList<>();
 
-            //arrayList for created values in future task
-            ArrayList<FutureTask<Integer>> taskList = new ArrayList<>();
-            taskList.clear();
+                //to prevent out of memory exception, let the threads sleep for 300/600ms
+                for (int t = 0; t < threadNum; t++) {
+                    int finalT = t;
 
-            //to prevent out of memory exception, let the threads sleep for 300/600ms
-            for (int t = 0; t < threadNum; t++) {
-
-                int finalT = t;
-
-                if ((finalT % 2) == 0) {
-                    try {
-                        Thread.sleep(200);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-
-                    try {
-                        Thread.sleep(300);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-
-                // Start thread for the first half of the numbers
-                FutureTask<Integer> futureTask_1 = new FutureTask<>(new Callable<Integer>() {
-                    @Override
-                    public Integer call() {
-
-                        // for (int i = 0; i < content.size(); i++) {
-                        //if file is directory, an image of a directory will be pushed in the array of thumbnails on the same position as the file is
-                        if (fileArrayList.get(finalT).isDirectory()) {
-                            try {
-                                thumbnails.add(ImageIO.read(getClass().getResource("folder.png")));//new ImageIcon(getClass().getResource("folder.png")));
-                                //System.out.println("added folder thumb");
-
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+                    if ((finalT % 2) == 0) {
+                        try {
+                            Thread.sleep(200);
+                        } catch (InterruptedException e) {
+                            LOGGER.log(Level.SEVERE, "Error message", e);
                         }
-                        //if file is an image (jpg) or movie (mp4) it creates a Foto, gets the thumbnail of it an pushes it into the array of thumbnails
-                        //clas Foto will check if it's a jpg or mp4 and will return a scaled instance or an icon for movies.
-                        else {
-                            if (fileArrayList.get(finalT).getName().toLowerCase().endsWith("jpg")
-                                    || fileArrayList.get(finalT).getName().toLowerCase().endsWith("jpeg")
-                                    || fileArrayList.get(finalT).getName().toLowerCase().endsWith("png")) {
+                    } else {
+                        try {
+                            Thread.sleep(300);
+                        } catch (InterruptedException e) {
+                            LOGGER.log(Level.SEVERE, "Error message", e);
+                        }
+
+                    }
+
+                    // Start thread for the first half of the numbers
+                    FutureTask<Integer> futureTask = new FutureTask<>(new Callable<Integer>() {
+                        @Override
+                        public Integer call() {
+                            // for (int i = 0; i < content.size(); i++) {
+                            //if file is directory, an image of a directory will be pushed in the array of thumbnails on the same position as the file is
+                            if (fileArrayList.get(finalT).isDirectory()) {
                                 try {
-                                    thumbnails.add(new Foto(fileArrayList.get(finalT).getAbsolutePath()).getThumbnail());
-                                    //System.out.println("added photo thumb");
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                            else if (fileArrayList.get(finalT).getName().toLowerCase().endsWith("mp4")) {
-                                try {
-                                    thumbnails.add(ImageIO.read(getClass().getResource("video.png")));
-                                    //System.out.println("added video thumb");
+                                    thumbnails.add(ImageIO.read(Objects.requireNonNull(getClass().getResource("folder.png"))));//new ImageIcon(getClass().getResource("folder.png")));
+                                    //System.out.println("added folder thumb");
 
                                 } catch (IOException e) {
-                                    e.printStackTrace();
+                                    LOGGER.log(Level.SEVERE, "Error loading folder icon", e);
                                 }
-                            } else if (fileArrayList.get(finalT).getName().toLowerCase().endsWith("mpeg4")) {
-                                try {
-                                    thumbnails.add(ImageIO.read(getClass().getResource("video.png")));
-                                    //System.out.println("added video thumb");
-
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            } else {
-                                Icon sysIco = FileSystemView.getFileSystemView().getSystemIcon(fileArrayList.get(finalT));
-                                thumbnails.add(((ImageIcon) sysIco).getImage());
-                                //.out.println("added sysIcon thumb");
-
                             }
-                        }
-                        return 0;
-                    }
-                });
-                taskList.add(futureTask_1);
-                executor.execute(futureTask_1);
-            }
+                            //if file is an image (jpg) or movie (mp4) it creates a Foto, gets the thumbnail of it an pushes it into the array of thumbnails
+                            //clas Foto will check if it's a jpg or mp4 and will return a scaled instance or an icon for movies.
+                            else {
+                                if (fileArrayList.get(finalT).getName().toLowerCase().endsWith("jpg")
+                                        || fileArrayList.get(finalT).getName().toLowerCase().endsWith("jpeg")
+                                        || fileArrayList.get(finalT).getName().toLowerCase().endsWith("png")) {
+                                    try {
+                                        thumbnails.add(new Foto(fileArrayList.get(finalT).getAbsolutePath()).getThumbnail());
+                                        //System.out.println("added photo thumb");
+                                    } catch (Exception e) {
+                                        LOGGER.log(Level.SEVERE, "Error creating thumbnail for: " + fileArrayList.get(finalT).getAbsolutePath(), e);
+                                    }
+                                } else if (fileArrayList.get(finalT).getName().toLowerCase().endsWith("mp4")) {
+                                    try {
+                                        thumbnails.add(ImageIO.read(Objects.requireNonNull(getClass().getResource("assets/video.png"))));
+                                        //System.out.println("added video thumb");
 
-            // Wait until all results are available and combine them at the same time
-            int amount = 0;
-            for (int j = 0; j < threadNum; j++) {
-                FutureTask<Integer> futureTask = taskList.get(j);
-                try {
-                    amount += futureTask.get();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
+                                    } catch (IOException e) {
+                                        LOGGER.log(Level.SEVERE, "Error message", e);
+                                    }
+                                } else if (fileArrayList.get(finalT).getName().toLowerCase().endsWith("mpeg4")) {
+                                    try {
+                                        thumbnails.add(ImageIO.read(Objects.requireNonNull(getClass().getResource("assets/video.png"))));
+                                        //System.out.println("added video thumb");
+
+                                    } catch (IOException e) {
+                                        LOGGER.log(Level.SEVERE, "Error message", e);
+                                    }
+                                } else {
+                                    Icon sysIco = FileSystemView.getFileSystemView().getSystemIcon(fileArrayList.get(finalT));
+                                    thumbnails.add(((ImageIcon) sysIco).getImage());
+                                    //.out.println("added sysIcon thumb");
+
+                                }
+                            }
+                            return 0;
+                        }
+                    });
+                    taskList.add(futureTask);
+                    executor.execute(futureTask);
                 }
+
+                // Wait until all results are available and combine them at the same time
+                int amount = 0;
+                for (int j = 0; j < threadNum; j++) {
+                    FutureTask<Integer> futureTask = taskList.get(j);
+                    try {
+                        amount += futureTask.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        LOGGER.log(Level.SEVERE, "Error message", e);
+                    }
+                }
+                executor.shutdown();
             }
-            executor.shutdown();
         }
     }
 
@@ -399,9 +394,9 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         //new JButton, which image is located in the src-folder
 
         //---
-        JButton chooseFolder = new JButton(new ImageIcon(getClass().getResource("folder.png")));
-        JButton sortButton = new JButton(new ImageIcon(getClass().getResource("sort-s.png")));
-        JButton undoChanges = new JButton(new ImageIcon(getClass().getResource("undo.png")));
+        JButton chooseFolder = new JButton(new ImageIcon(Objects.requireNonNull(getClass().getResource("folder.png"))));
+        JButton sortButton = new JButton(new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/sort-s.png"))));
+        JButton undoChanges = new JButton(new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/undo.png"))));
 
         chooseFolder.setBackground(Color.DARK_GRAY);
         chooseFolder.setForeground(Color.WHITE);
@@ -445,8 +440,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
          * Construct a FileTree
          */
         //final Object[] selectedFile = new File[1];
-        private JTree tree;
-        private DefaultTreeCellRenderer renderer;
+        private final JTree tree;
 
         private int minHeight;
         private int minWidth;
@@ -463,7 +457,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             tree.setBackground(Color.DARK_GRAY);
             tree.setForeground(Color.WHITE);
 
-            renderer = new DefaultTreeCellRenderer();
+            DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
             renderer.setBackground(new Color(0, 0, 0, 0));
             renderer.setBackgroundNonSelectionColor(new Color(0, 0, 0, 0));
             renderer.setMinimumSize(tree.getMinimumSize());
@@ -475,7 +469,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) e
                         .getPath().getLastPathComponent();
                 System.out.println("Filetree: You selected " + node);
-                if (selected != new File(node.toString())) {
+                if (!Objects.equals(selected, new File(node.toString()))) {
                     selected = new File(node.toString());
                     // cPanel.removeAll();
                     if (node.getChildCount() > 0) {
@@ -572,7 +566,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         try {
             SortImages.sort(hoursBetweenFotos, pathToSort.toPath());
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error message", e);
         }
 
         selected = pathToSort;
@@ -708,10 +702,10 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         //labels in contentpanel
         if (obj instanceof JList) {
             if (cmd.equals("folder")) {
-              //  System.out.println("klicked on folder");
+              System.out.println("klicked on folder");
             }
-            if (cmd.equals("picture")) {
-               // System.out.println("klicked on picture");
+            else if (cmd.equals("picture")) {
+               System.out.println("klicked on picture");
             }
         }
     }
@@ -726,7 +720,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
     }
 
 
-    private class MyFileFilter extends FileFilter {
+    private static class MyFileFilter extends FileFilter {
         public boolean accept(File file) {
             return file.isDirectory();
         }

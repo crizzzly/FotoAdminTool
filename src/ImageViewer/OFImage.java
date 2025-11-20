@@ -4,9 +4,6 @@ import org.imgscalr.Scalr;
 
 import java.awt.*;
 import java.awt.image.*;
-import java.io.IOException;
-import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageInputStream;
 
 /**
  * OFImage is a class that defines an image in OF (Objects First) format.
@@ -25,10 +22,8 @@ public class OFImage extends BufferedImage {
                 image.isAlphaPremultiplied(), null);
     }
 
-    public BufferedImage getScaledInstance(BufferedImage image, int maxSize){
-        BufferedImage inputImg = image;
+    public BufferedImage getScaledInstance(BufferedImage inputImg, int maxSize){
         BufferedImage outputImg = null;
-
 
         int resWidth = 64;
         int resHeight = 64;

@@ -1,5 +1,7 @@
 
 import javax.swing.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Sets up Look & feel
@@ -23,13 +25,15 @@ public class Main {
         }
         */
 
+    private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+
     public static void main(String[] args) {
       /* Use an appropriate Look and Feel */
         try {
             //UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (UnsupportedLookAndFeelException | IllegalAccessException | ClassNotFoundException | InstantiationException ex) {
-            ex.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to set look and feel", ex);
         }
         /* Turn off metal's use of bold fonts */
         //UIManager.put("swing.", Boolean.FALSE);
