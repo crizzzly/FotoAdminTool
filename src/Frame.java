@@ -141,6 +141,14 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         content.clear();
         thumbnails.clear();
 
+        // Set the layout to a grid layout with horizontal and vertical gaps
+        int thumbWidth = 150; // Set your desired thumbnail width
+        int hGap = 20; // Horizontal gap between cells
+        int vGap = 30; // Vertical gap between cells (extra space for filename)
+        listContent.setLayoutOrientation(JList.HORIZONTAL_WRAP);
+        listContent.setFixedCellWidth(thumbWidth + hGap);
+        listContent.setFixedCellHeight(thumbWidth + 40); // Extra space for filename
+        listContent.setCellRenderer(new ThumbnailCellRenderer(thumbWidth));
 
         //if selected folder contains files or folders, content will be added to content ArrayList<File>
         if (selected == null){
@@ -151,7 +159,6 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
         content.addAll(Arrays.asList(Objects.requireNonNull(selected.listFiles())));
         MyThread t1 = new MyThread();
         t1.run(content);
-        
 
         // Set up the list with a placeholder model first
         // DefaultListModel<Object> listModel = new DefaultListModel<>();
@@ -917,6 +924,86 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             return icon != null ? icon : new BufferedImage(100, 75, BufferedImage.TYPE_INT_ARGB);
         } catch (Exception e) {
             return new BufferedImage(100, 75, BufferedImage.TYPE_INT_ARGB);
+        }
+    }
+
+    private class ThumbnailCellRenderer extends JPanel implements ListCellRenderer<Object> {
+        private final JLabel iconLabel = new JLabel("", JLabel.CENTER);
+        private final JLabel textLabel = new JLabel("", JLabel.CENTER);
+        private final int thumbWidth;
+        private final Color selectionColor = new Color(60, 120, 200);
+        private final Color defaultColor = Color.DARK_GRAY;
+
+        public ThumbnailCellRenderer(int thumbWidth) {
+            this.thumbWidth = thumbWidth;
+            setLayout(new BorderLayout(0, 5)); // 5px vertical gap between icon and text
+            setOpaque(true);
+            setBackground(defaultColor);
+
+            // Configure icon label
+            iconLabel.setOpaque(false);
+            iconLabel.setHorizontalAlignment(JLabel.CENTER);
+
+            // Configure text label
+            textLabel.setOpaque(false);
+            textLabel.setForeground(Color.WHITE);
+            textLabel.setFont(getFont().deriveFont(Font.PLAIN, 12));
+
+            // Add components to panel
+            add(iconLabel, BorderLayout.CENTER);
+            add(textLabel, BorderLayout.SOUTH);
+
+            // Add padding around the cell
+            setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        }
+
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value,
+                                                      int index, boolean isSelected, boolean cellHasFocus) {
+            if (value instanceof File) {
+                File file = (File) value;
+                textLabel.setText(file.getName());
+
+                // Set icon - use existing thumbnail or default icon
+                ImageIcon icon = null;
+                if (index >= 0 && index < thumbnails.size()) {
+                    Image img = thumbnails.get(index);
+                    if (img != null) {
+                        // Scale image while maintaining aspect ratio
+                        int width = thumbWidth;
+                        int height = (int) (img.getHeight(null) * ((double) width / img.getWidth(null)));
+                        icon = new ImageIcon(img.getScaledInstance(width, height, Image.SCALE_SMOOTH));
+                    }
+                }
+
+                if (icon == null) {
+                    // Use default folder or file icon
+                    icon = file.isDirectory()
+                            ? new ImageIcon(getClass().getResource("folder.png"))
+                            : new ImageIcon(getClass().getResource("file.png"));
+
+                    // Scale the default icon to match thumbnail size
+                    if (icon != null) {
+                        Image img = icon.getImage();
+                        int width = Math.min(thumbWidth, icon.getIconWidth());
+                        int height = (int) (icon.getIconHeight() * ((double) width / icon.getIconWidth()));
+                        icon = new ImageIcon(img.getScaledInstance(width, height, Image.SCALE_SMOOTH));
+                    }
+                }
+
+                iconLabel.setIcon(icon);
+            }
+
+            // Set background and foreground based on selection
+            if (isSelected) {
+                setBackground(selectionColor);
+                textLabel.setForeground(Color.WHITE);
+            } else {
+                setBackground(defaultColor);
+                textLabel.setForeground(Color.LIGHT_GRAY);
+            }
+
+            return this;
         }
     }
 }
