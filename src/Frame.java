@@ -3,6 +3,10 @@
 import ImageViewer.ImageViewer;
 import java.awt.*;
 import java.awt.event.*;
+
+import java.util.Map;
+import java.util.HashMap;
+import java.io.ByteArrayInputStream;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -115,7 +119,7 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
 
         //creates JList that holds thumbnails and names of files / directories
         DefaultListModel<Object> listModel = new DefaultListModel<>();
-        listModel.removeAllElements();
+        // listModel.removeAllElements();
         listContent = new JList<>(listModel);
 
         listContent.removeAll();
@@ -128,15 +132,68 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             selected = sourceDir;
         }
 
-            //creates a File and puts it  in the array of content-files
-            content.addAll(Arrays.asList( Objects.requireNonNull(selected.listFiles())));
-            MyThread t1 = new MyThread();
-            //t1.run(content);
-            t1.start();
+        //creates a File and puts it  in the array of content-files
+        content.addAll(Arrays.asList(Objects.requireNonNull(selected.listFiles())));
+        MyThread t1 = new MyThread();
+        //t1.run(content);
+        t1.run(content);
         
 
-        //add directory content to JList
-        listContent.setListData(content.toArray());
+        // Set up the list with a placeholder model first
+        // DefaultListModel<Object> listModel = new DefaultListModel<>();
+        for (File file : content) {
+            listModel.addElement(file);
+        }
+        listContent.setModel(listModel);
+        
+        // Start loading thumbnails in the background
+        new Thread(() -> {
+            // Process all files and create thumbnails
+            for (int i = 0; i < content.size(); i++) {
+                final int index = i;
+                try {
+                    Image thumbnail;
+                    if (content.get(i).isDirectory()) {
+                        thumbnail = ImageIO.read(Objects.requireNonNull(getClass().getResource("folder.png")));
+                    } else if (content.get(i).getName().toLowerCase().matches(".*\\.(jpg|jpeg|png)$")) {
+                        thumbnail = new Foto(content.get(i).getAbsolutePath()).getThumbnail();
+                    } else if (content.get(i).getName().toLowerCase().endsWith(".cr2") || 
+                              content.get(i).getName().toLowerCase().endsWith(".nef") ||
+                              content.get(i).getName().toLowerCase().endsWith(".arw") ||
+                              content.get(i).getName().toLowerCase().matches(".*\\.(raf|dng|crw|cr3|raw|rw2|pef|srf|sr2|x3f)$")) {
+                        // Handle RAW files
+                        thumbnail = createRawThumbnail(content.get(i));
+                    } else {
+                        // Default icon for unsupported file types
+                        try {
+                            thumbnail = ImageIO.read(Objects.requireNonNull(getClass().getResource("file.png")));
+                        } catch (Exception e) {
+                            thumbnail = null;
+                        }
+                    }
+                    
+                    // Update the UI on the Event Dispatch Thread
+                    SwingUtilities.invokeLater(() -> {
+                        if (thumbnails.size() > index) {
+                            thumbnails.set(index, thumbnail);
+                        } else {
+                            // If the index doesn't exist yet, fill up to that index with nulls
+                            while (thumbnails.size() < index) {
+                                thumbnails.add(null);
+                            }
+                            thumbnails.add(thumbnail);
+                        }
+                        // Trigger a repaint of just this cell
+                        listContent.repaint(listContent.getCellBounds(index, index));
+                    });
+                    
+                    // Small delay to prevent UI freezing
+                    Thread.sleep(50);
+                } catch (Exception e) {
+                    LOGGER.log(Level.SEVERE, "Error creating thumbnail for: " + content.get(i).getAbsolutePath(), e);
+                }
+            }
+        }).start();
 
         //the call to setLayoutOrientation, invoking setVisibleRowCount(-1) makes the list display the maximum number of items possible in the available space
         listContent.setVisibleRowCount(-1);
@@ -154,10 +211,28 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                     boolean isSelected,      // is the cell selected
                     boolean cellHasFocus)    // does the cell have focus
             {
+                File file = (File) value;
+                setText(file.getName());
+                
+                // Set the icon if it's loaded, otherwise use a loading placeholder
+                if (index < thumbnails.size() && thumbnails.get(index) != null) {
+                    setIcon(new ImageIcon(thumbnails.get(index)));
+                } else {
+                    // Create a placeholder icon or use a loading indicator
+                    try {
+                        // Try to use a loading icon or file icon as placeholder
+                        ImageIcon loadingIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("loading.png")));
+                        setIcon(loadingIcon);
+                    } catch (Exception e) {
+                        // If no loading icon is available, use a default system icon
+                        setIcon(UIManager.getIcon("FileView.fileIcon"));
+                    }
+                }
+                
+                setEnabled(list.isEnabled());
+                setFont(list.getFont());
+                setOpaque(true);
 
-
-                setText(content.get(index).getName());
-                setIcon((new ImageIcon(thumbnails.get(index))));
                 if (isSelected) {
                     setBackground(list.getSelectionBackground());
                     setForeground(list.getSelectionForeground());
@@ -165,9 +240,6 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
                     setBackground(Color.DARK_GRAY);
                     setForeground(list.getForeground());
                 }
-                setEnabled(list.isEnabled());
-                setFont(list.getFont());
-                setOpaque(true);
                 return this;
             }
         }
@@ -188,15 +260,19 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             public void mouseClicked(MouseEvent e) {
             if (e.getClickCount() == 2) {
                 int index = listContent.locationToIndex(e.getPoint());
-                //System.out.println("Double clicked on Item " + index);
+                if (index < 0) return;
+                LOGGER.log(Level.INFO, "Double clicked on Item " + index);
                 File clicked = new File(listContent.getModel().getElementAt(index).toString());
-                if(clicked.isFile()) {
-                    new ImageViewer(clicked);// .getAccessibleContext().get
-                    //System.out.println("item: " + listContent.getModel().getElementAt(index));
-                }
-                else{
+
+                // TODO: Not working, Directory not opening in file browser
+                if(clicked.isDirectory()) {
                     fileTree.tree.clearSelection();
                     fileTree.setSelectedTreeNode(clicked.getAbsolutePath());
+                }
+                else{
+                    new ImageViewer(clicked);// .getAccessibleContext().get
+                    LOGGER.log(Level.INFO, "Opened ImageViewer for file: " + clicked);
+
                 }
             }
             }
@@ -550,8 +626,11 @@ public class Frame extends JFrame implements ActionListener, PropertyChangeListe
             // whose name starts with prefix.
             int startRow = 0;
             TreePath tPath = tree.getNextMatch(path, startRow, Position.Bias.Forward);
-            tree.setSelectionPath(tPath);
-            tree.expandPath(tPath);
+            if(tPath != null){
+                tree.setSelectionPath(tPath);
+                tree.expandPath(tPath);
+            }
+
         }
     }
 
