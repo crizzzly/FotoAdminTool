@@ -1,9 +1,8 @@
-
 import FileBrowser.MainFrame;
 import FileBrowser.SortImages;
+
 import javax.swing.*;
 import java.awt.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static FileBrowser.UIConstants.TESTING;
@@ -46,7 +45,7 @@ public class Main {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             }
 
-            // Apply dark theme if in dark mode
+            // Apply dark FileBrowser.theme if in dark mode
             if (isDarkMode) {
                 applyDarkTheme();
             }
@@ -62,8 +61,8 @@ public class Main {
         try {
             // Try to detect dark mode on Linux
             if (System.getProperty("os.name").toLowerCase().contains("linux")) {
-                // Check GTK theme for dark mode
-                Process process = Runtime.getRuntime().exec(new String[]{"gsettings", "get", "org.gnome.desktop.interface", "gtk-theme"});
+                // Check GTK FileBrowser.theme for dark mode
+                Process process = Runtime.getRuntime().exec(new String[]{"gsettings", "get", "org.gnome.desktop.interface", "gtk-FileBrowser.theme"});
                 process.waitFor();
                 String theme = new String(process.getInputStream().readAllBytes()).toLowerCase().trim();
                 return theme.contains("dark") || theme.endsWith("-dark");
