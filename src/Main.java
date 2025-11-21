@@ -30,40 +30,84 @@ public class Main {
 
     private static void setSystemLookAndFeel() {
         try {
-            // Get the system look and feel class name
-            String lookAndFeel = UIManager.getSystemLookAndFeelClassName();
-
-            // Special handling for macOS to get the native Aqua look and feel
-            if (System.getProperty("os.name").toLowerCase().contains("mac")) {
-                System.setProperty("apple.laf.useScreenMenuBar", "true");
-                System.setProperty("apple.awt.application.name", "FotoAdminTool");
-                lookAndFeel = "com.apple.laf.AquaLookAndFeel";
+            String osName = System.getProperty("os.name").toLowerCase();
+            boolean isDarkMode = isSystemDarkMode();
+            
+            // Set the system look and feel
+            if (osName.contains("mac")) {
+                UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");
+            } else if (osName.contains("windows")) {
+                UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+            } else if (osName.contains("linux")) {
+                // Force GTK3 on Linux for better dark mode support
+                System.setProperty("jdk.gtk.version", "3");
+                UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+            } else {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             }
 
-            // Special handling for Windows to get the native Windows look and feel
-            if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-                lookAndFeel = "com.sun.java.swing.plaf.windows.WindowsLookAndFeel";
+            // Apply dark theme if in dark mode
+            if (isDarkMode) {
+                applyDarkTheme();
             }
 
-            // Special handling for Linux to get the native Linux look and feel
+            // Update the UI to reflect the new look and feel
+            updateAllUIs();
+        } catch (Exception e) {
+            LOGGER.severe("Error setting system look and feel: " + e.getMessage());
+        }
+    }
+    
+    private static boolean isSystemDarkMode() {
+        try {
+            // Try to detect dark mode on Linux
             if (System.getProperty("os.name").toLowerCase().contains("linux")) {
-                lookAndFeel = "com.sun.java.swing.plaf.gtk.GTKLookAndFeel";
+                // Check GTK theme for dark mode
+                Process process = Runtime.getRuntime().exec(new String[]{"gsettings", "get", "org.gnome.desktop.interface", "gtk-theme"});
+                process.waitFor();
+                String theme = new String(process.getInputStream().readAllBytes()).toLowerCase().trim();
+                return theme.contains("dark") || theme.endsWith("-dark");
             }
+            // Add other OS-specific dark mode detection here if needed
+        } catch (Exception e) {
+            System.err.println("Error detecting dark mode: " + e.getMessage());
+        }
+        return false;
+    }
+    
+    private static void applyDarkTheme() {
+        // Set dark color scheme
+        UIManager.put("control", new Color(64, 64, 64));
+        UIManager.put("text", Color.WHITE);
+        UIManager.put("nimbusBase", new Color(18, 30, 49));
+        UIManager.put("nimbusFocus", new Color(115, 164, 209));
+        UIManager.put("nimbusLightBackground", new Color(45, 45, 45));
+        UIManager.put("nimbusSelectionBackground", new Color(75, 110, 175));
+        
+        // Update UI colors
+        UIManager.put("Panel.background", new Color(45, 45, 45));
+        UIManager.put("Panel.foreground", Color.WHITE);
+        UIManager.put("List.background", new Color(45, 45, 45));
+        UIManager.put("List.foreground", Color.WHITE);
+        UIManager.put("List.selectionBackground", new Color(75, 110, 175));
+        UIManager.put("List.selectionForeground", Color.WHITE);
+        UIManager.put("Viewport.background", new Color(45, 45, 45));
+        UIManager.put("ScrollPane.background", new Color(45, 45, 45));
+        UIManager.put("ScrollBar.background", new Color(45, 45, 45));
+        UIManager.put("ScrollBar.thumb", new Color(80, 80, 80));
+        UIManager.put("ScrollBar.thumbDarkShadow", new Color(30, 30, 30));
+        UIManager.put("ScrollBar.thumbShadow", new Color(60, 60, 60));
+        UIManager.put("ScrollBar.thumbHighlight", new Color(100, 100, 100));
+        UIManager.put("ScrollBar.track", new Color(45, 45, 45));
+    }
 
-            // Set the look and feel
-            UIManager.setLookAndFeel(lookAndFeel);
+    private static void updateAllUIs() {
+        // Ensure proper font scaling
+        UIManager.put("defaultFont", new Font(Font.SANS_SERIF, Font.PLAIN, 12));
 
-        } catch (ClassNotFoundException | InstantiationException |
-                 IllegalAccessException | UnsupportedLookAndFeelException e) {
-            LOGGER.log(Level.WARNING, "Could not set system look and feel", e);
-            try {
-                // Fall back to Nimbus if system L&F fails
-                UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-            } catch (Exception ex) {
-                LOGGER.log(Level.WARNING, "Could not set Nimbus look and feel", ex);
-            }
-        } finally {
-            // Ensure proper font scaling
+        // Enable anti-aliasing for better text rendering
+        System.setProperty("awt.useSystemAAFontSettings", "on");
+        System.setProperty("swing.aatext", "true");
             UIManager.put("defaultFont", new Font(Font.SANS_SERIF, Font.PLAIN, 12));
 
             // Enable anti-aliasing for better text rendering
@@ -91,7 +135,7 @@ public class Main {
             }
         }
     }
-}
+
 
     /*
         static ProgressMonitor pbar;

@@ -1,5 +1,6 @@
 package FileBrowser;//package Gui;
 
+import FileBrowser.UIComponents.*;
 import ImageViewer.ImageViewer;
 
 import javax.swing.*;
@@ -19,6 +20,8 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static FileBrowser.SortImages.undoChanges;
+import static FileBrowser.UIComponents.createToolbar;
 import static FileBrowser.UIHelpers.getSystemIcon;
 
 //import java.util.List;
@@ -27,7 +30,7 @@ import static FileBrowser.UIHelpers.getSystemIcon;
  * jajaj ich schreib ja schon was
  */
 public class MainFrame extends JFrame implements ActionListener, PropertyChangeListener {
-    private final Container c = getContentPane();
+    private final Container containerPane = getContentPane();
 
     //opens the windows standard directory for pictures on startup
     private final File sourceDir;
@@ -64,14 +67,18 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
         setMaximumSize(screenSize);
         setBounds(0, 0, screenSize.width, screenSize.height);
 
-        c.setLayout(new BorderLayout());
+        containerPane.setLayout(new BorderLayout());
 
         // TODO: change this to a user-selected directory
         sourceDir = new File(System.getProperty("user.home")+"/Pictures");
 
-
-        buildToolbar();
+        // Add toolbar to the top of the container
+        containerPane.add(createToolbar(this), BorderLayout.NORTH);
+        
+        // Build and add the file tree to the left
         buildFileTree();
+        
+        // Build and add the scroll pane to the center
         buildScrollPane();
         //buildProgressBar();
 
@@ -123,7 +130,7 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
         listContent.setVisibleRowCount(-1);
         listContent.setFixedCellWidth(UIConstants.THUMBNAIL_WIDTH + UIConstants.CELL_HORIZONTAL_GAP);
         listContent.setFixedCellHeight(UIConstants.THUMBNAIL_WIDTH + UIConstants.CELL_VERTICAL_GAP + UIConstants.FILENAME_LABEL_HEIGHT);
-        listContent.setBackground(UIConstants.BACKGROUND_DARK);
+        listContent.setBackground(UIConstants.PANEL_BACKGROUND);
         listContent.setForeground(UIConstants.TEXT_LIGHT);
         listContent.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         listContent.setLayoutOrientation(JList.HORIZONTAL_WRAP);
@@ -177,7 +184,7 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
 
 
         JScrollPane scrollPane = createContentScrollPane();
-        c.add(scrollPane, BorderLayout.CENTER);
+        containerPane.add(scrollPane, BorderLayout.CENTER);
         pack();
     }
 
@@ -195,11 +202,11 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
         JButton hilfe = new JButton("Hilfe");
 
 
-        bearbeiten.setBackground(UIConstants.BACKGROUND_DARK);
+        bearbeiten.setBackground(UIConstants.PANEL_BACKGROUND);
         bearbeiten.setForeground(UIConstants.TEXT_LIGHT
 );
 
-        hilfe.setBackground(UIConstants.BACKGROUND_DARK);
+        hilfe.setBackground(UIConstants.PANEL_BACKGROUND);
         hilfe.setForeground(UIConstants.TEXT_LIGHT
 );
 
@@ -218,51 +225,6 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
      * adds the toolbar to the JFrame on top of the frame
      * creates a button to set up the location of the folder you want to sort.
      */
-    private void buildToolbar() {
-        JToolBar bar = new JToolBar();
-        bar.setSize(230, 20);
-
-        bar.setBackground(UIConstants.BACKGROUND_DARK);
-        bar.setForeground(UIConstants.TEXT_LIGHT
-);
-        bar.setFloatable(false);
-        c.add(bar, BorderLayout.NORTH);
-        //new JButton, which image is located in the src-folder
-
-        //---
-        JButton chooseFolder = new JButton();
-        chooseFolder.setIcon(getSystemIcon("folder"));
-        chooseFolder.setToolTipText("Select Folder");
-
-        JButton sortButton = new JButton();
-        sortButton.setIcon(getSystemIcon("sort"));
-        sortButton.setToolTipText("Sort Items");
-
-        JButton undoChanges = new JButton();
-        undoChanges.setIcon(getSystemIcon("undo"));
-        undoChanges.setToolTipText("Undo Changes");
-        chooseFolder.setBackground(UIConstants.BACKGROUND_DARK);
-        chooseFolder.setForeground(UIConstants.TEXT_LIGHT
-);
-
-        chooseFolder.setToolTipText("set the location of the folder you want to sort");
-        chooseFolder.setToolTipText("setup for sort function");
-
-        //if you use setActionCommand you don't have to write one actionListener for each actionEvent.
-        chooseFolder.setActionCommand("chooseFolder");
-        sortButton.setActionCommand("sort");
-        undoChanges.setActionCommand("undo");
-
-        //adds actionListener to the items
-        chooseFolder.addActionListener(this);
-        sortButton.addActionListener(this);
-        undoChanges.addActionListener(this);
-
-        bar.add(chooseFolder);
-        bar.add(sortButton);
-        bar.add(undoChanges);
-    }
-    //----
 
     //Creates a JScrollPane, creates a new FileBrowser.FileTree instance with given directory saved in sourceDir
     //adds the FileBrowser.FileTree to the treeScrollPane on left side
@@ -270,7 +232,7 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
         JScrollPane treeScrollPane = new JScrollPane();
         fileTree = new FileTree(sourceDir, this);
         treeScrollPane.getViewport().add(fileTree);
-        c.add(treeScrollPane, BorderLayout.WEST);
+        containerPane.add(treeScrollPane, BorderLayout.WEST);
     }
 
     /**
@@ -308,7 +270,7 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
 
         if (obj instanceof JButton) {
             //folder-Button: opens filechooser to choose directory to sort, saves chosen directory in File selected
-            if (cmd.equals("chooseFolder")) {
+            if (cmd.equals(UIConstants.Buttons.CHOOSE_FOLDER)) {
                 //System.out.println("chooseFolder clicked");
                 //opens the pop-up window to search through the local stored folders.
                 JFileChooser fc = new JFileChooser();
@@ -336,7 +298,7 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
             }
             //made by Jana Seemann
             //opens JDialog to specify settings for sorting
-            if (cmd.equals("sort")) {
+            if (cmd.equals(UIConstants.Buttons.SORT_FILES)) {
                 //System.out.println("Sortieren clicked");
 
                 sortjd = new JDialog();
@@ -411,8 +373,8 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
 
             }
 
-            if (cmd.equals("undo")) {
-                SortImages.undoChanges();
+            if (cmd.equals(UIConstants.Buttons.UNDO_CHANGES)) {
+                undoChanges();
                 buildScrollPane();
                 buildFileTree();
             }
@@ -477,7 +439,7 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
         scrollPane.setLayout(new ScrollPaneLayout());
         //---- change appearance of scrollPane
         scrollPane.setPreferredSize(new Dimension(900, 800));
-        scrollPane.setBackground(UIConstants.BACKGROUND_DARK);
+        scrollPane.setBackground(UIConstants.PANEL_BACKGROUND);
         scrollPane.setForeground(UIConstants.TEXT_LIGHT);
         scrollPane.setWheelScrollingEnabled(true);
 

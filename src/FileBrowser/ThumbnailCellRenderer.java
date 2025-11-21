@@ -22,7 +22,7 @@ public class ThumbnailCellRenderer extends JPanel implements ListCellRenderer<Ob
         this.thumbnails = thumbnails;
         setLayout(new BorderLayout(0, 5)); // 5px vertical gap between icon and text
         setOpaque(true);
-        setBackground(UIConstants.BACKGROUND_DARK);
+        setBackground(UIConstants.PANEL_BACKGROUND);
 
         // Configure icon label
         iconLabel.setOpaque(false);
@@ -80,7 +80,7 @@ public class ThumbnailCellRenderer extends JPanel implements ListCellRenderer<Ob
             setBackground(UIConstants.SELECTION_COLOR);
             textLabel.setForeground(UIConstants.TEXT_LIGHT);
         } else {
-            setBackground(UIConstants.BACKGROUND_DARK);
+            setBackground(UIConstants.PANEL_BACKGROUND);
             textLabel.setForeground(UIConstants.TEXT_MUTED);
         }
         return this;

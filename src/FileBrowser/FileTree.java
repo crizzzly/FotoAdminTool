@@ -33,14 +33,51 @@ public class FileTree extends JPanel {
         //  tree.addItemListener
         ToolTipManager.sharedInstance().registerComponent(tree);
 
-        tree.setBackground(UIConstants.BACKGROUND_DARK);
-        tree.setForeground(UIConstants.TEXT_LIGHT
-        );
-
-        DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
-        renderer.setBackground(new Color(0, 0, 0, 0));
-        renderer.setBackgroundNonSelectionColor(new Color(0, 0, 0, 0));
-        renderer.setMinimumSize(tree.getMinimumSize());
+        // Set tree properties
+        tree.setBackground(UIConstants.PANEL_BACKGROUND);
+        tree.setForeground(UIConstants.TEXT_LIGHT);
+        tree.setOpaque(true);
+        
+        // Configure tree UI properties for dark mode
+        UIManager.put("Tree.background", UIConstants.PANEL_BACKGROUND);
+        UIManager.put("Tree.textBackground", UIConstants.PANEL_BACKGROUND);
+        UIManager.put("Tree.textForeground", UIConstants.TEXT_LIGHT);
+        UIManager.put("Tree.selectionBackground", UIConstants.SELECTION_COLOR);
+        UIManager.put("Tree.selectionForeground", Color.WHITE);
+        
+        // Create and configure the tree cell renderer
+        DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer() {
+            @Override
+            public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded,
+                                                        boolean leaf, int row, boolean hasFocus) {
+                super.getTreeCellRendererComponent(tree, value, sel, sel, leaf, row, hasFocus);
+                
+                // Set background and foreground based on selection
+                if (sel) {
+                    setBackground(UIConstants.SELECTION_COLOR);
+                    setForeground(Color.WHITE);
+                } else {
+                    setBackground(UIConstants.PANEL_BACKGROUND);
+                    setForeground(UIConstants.TEXT_LIGHT);
+                }
+                
+                // Set icon based on node type
+                if (leaf) {
+                    setIcon(UIManager.getIcon("FileView.fileIcon"));
+                } else {
+                    setIcon(expanded ? UIManager.getIcon("Tree.openIcon") : UIManager.getIcon("Tree.closedIcon"));
+                }
+                
+                return this;
+            }
+        };
+        
+        // Configure renderer colors
+        renderer.setBackgroundNonSelectionColor(UIConstants.PANEL_BACKGROUND);
+        renderer.setTextNonSelectionColor(UIConstants.TEXT_LIGHT);
+        renderer.setBackgroundSelectionColor(UIConstants.SELECTION_COLOR);
+        renderer.setTextSelectionColor(Color.WHITE);
+        renderer.setOpaque(true);
         // renderer.setToolTipText(tree.get);
         tree.setCellRenderer(renderer);
 
