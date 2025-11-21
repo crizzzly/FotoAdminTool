@@ -3,6 +3,7 @@ package FileBrowser;
 import java.awt.Color;
 
 public class UIConstants {
+    public static final boolean TESTING = true;
     // Colors
     public static final Color SELECTION_COLOR = new Color(7, 110, 246);
     public static final Color BACKGROUND_DARK = new Color(45, 45, 48);

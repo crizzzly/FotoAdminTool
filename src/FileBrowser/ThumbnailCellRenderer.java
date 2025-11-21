@@ -1,6 +1,8 @@
 package FileBrowser;
 
+
 import javax.swing.*;
+import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
@@ -63,17 +65,12 @@ public class ThumbnailCellRenderer extends JPanel implements ListCellRenderer<Ob
             }
 
             if (icon == null) {
-                // Use default folder or file icon
-                // TODO: Get Bigger Directory Icon
-                icon = file.isDirectory()
-                        ? new ImageIcon(Objects.requireNonNull(getClass().getResource(UIConstants.FOLDER_ICON_S)))
-                        : new ImageIcon(Objects.requireNonNull(getClass().getResource(UIConstants.FOLDER_ICON_L)));
-
+                // Use default folder or file icon from FileOperations utility
+                Image iconImage = FileOperations.getDefaultSystemIcon(file.isDirectory());
                 // Scale the default icon to match thumbnail size
-                Image img = icon.getImage();
-                int width = Math.min(thumbWidth, icon.getIconWidth());
-                int height = (int) (icon.getIconHeight() * ((double) width / icon.getIconWidth()));
-                icon = new ImageIcon(img.getScaledInstance(width, height, Image.SCALE_SMOOTH));
+                int width = Math.min(thumbWidth, iconImage.getWidth(null));
+                int height = (int) (iconImage.getHeight(null) * ((double) width / iconImage.getWidth(null)));
+                icon = new ImageIcon(iconImage.getScaledInstance(width, height, Image.SCALE_SMOOTH));
             }
             iconLabel.setIcon(icon);
         }

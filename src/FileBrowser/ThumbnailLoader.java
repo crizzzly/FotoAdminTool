@@ -52,7 +52,7 @@ public class ThumbnailLoader {
 
     private Image createThumbnail(File file) throws IOException {
         if (file.isDirectory()) {
-            return FileOperations.createDefaultIcon(true);
+            return FileOperations.getDefaultSystemIcon(true);
         }
 
         try {
@@ -63,7 +63,7 @@ public class ThumbnailLoader {
             return scaleImage(image, thumbnailWidth);
         } catch (IOException e) {
             LOGGER.log(Level.FINE, "Using default icon for: " + file.getName());
-            return FileOperations.createDefaultIcon(false);
+            return FileOperations.getDefaultSystemIcon(false);
         }
     }
 

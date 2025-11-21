@@ -2,8 +2,11 @@
 import FileBrowser.MainFrame;
 import FileBrowser.SortImages;
 import javax.swing.*;
+import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static FileBrowser.UIConstants.TESTING;
 
 /**
  * Sets up Look & feel
@@ -14,19 +17,79 @@ public class Main {
     private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
 
     public static void main(String[] args) {
-      /* Use an appropriate Look and Feel */
-        try {
-            //UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (UnsupportedLookAndFeelException | IllegalAccessException | ClassNotFoundException | InstantiationException ex) {
-            LOGGER.log(Level.SEVERE, "Failed to set look and feel", ex);
-        }
-        /* Turn off metal's use of bold fonts */
-        //UIManager.put("swing.", Boolean.FALSE);
+        // Set system look and feel
+        setSystemLookAndFeel();
 
-        MainFrame mainFrame = new MainFrame();
-        //frame.setVisible(true);
-        Runtime.getRuntime().addShutdownHook(new Thread(SortImages::undoChanges));
+        // Set up the main frame
+        SwingUtilities.invokeLater(() -> {
+            MainFrame mainFrame = new MainFrame();
+            //reset changes on exit if testing is enabled
+            if(TESTING) Runtime.getRuntime().addShutdownHook(new Thread(SortImages::undoChanges));
+        });
+    }
+
+    private static void setSystemLookAndFeel() {
+        try {
+            // Get the system look and feel class name
+            String lookAndFeel = UIManager.getSystemLookAndFeelClassName();
+
+            // Special handling for macOS to get the native Aqua look and feel
+            if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+                System.setProperty("apple.laf.useScreenMenuBar", "true");
+                System.setProperty("apple.awt.application.name", "FotoAdminTool");
+                lookAndFeel = "com.apple.laf.AquaLookAndFeel";
+            }
+
+            // Special handling for Windows to get the native Windows look and feel
+            if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+                lookAndFeel = "com.sun.java.swing.plaf.windows.WindowsLookAndFeel";
+            }
+
+            // Special handling for Linux to get the native Linux look and feel
+            if (System.getProperty("os.name").toLowerCase().contains("linux")) {
+                lookAndFeel = "com.sun.java.swing.plaf.gtk.GTKLookAndFeel";
+            }
+
+            // Set the look and feel
+            UIManager.setLookAndFeel(lookAndFeel);
+
+        } catch (ClassNotFoundException | InstantiationException |
+                 IllegalAccessException | UnsupportedLookAndFeelException e) {
+            LOGGER.log(Level.WARNING, "Could not set system look and feel", e);
+            try {
+                // Fall back to Nimbus if system L&F fails
+                UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+            } catch (Exception ex) {
+                LOGGER.log(Level.WARNING, "Could not set Nimbus look and feel", ex);
+            }
+        } finally {
+            // Ensure proper font scaling
+            UIManager.put("defaultFont", new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+
+            // Enable anti-aliasing for better text rendering
+            System.setProperty("awt.useSystemAAFontSettings", "on");
+            System.setProperty("swing.aatext", "true");
+
+            //For better support on high-DPI displays
+            System.setProperty("sun.java2d.uiScale", "1.0"); // Or "2.0" for 200% scaling
+
+            // Dark Mode support
+            // For Windows
+            if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+                UIManager.put("win.title.background", UIManager.get("Panel.background"));
+                UIManager.put("win.title.foreground", UIManager.get("Label.foreground"));
+            }
+            // For macOS
+            if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+                UIManager.put("mac.title.background", UIManager.get("Panel.background"));
+                UIManager.put("mac.title.foreground", UIManager.get("Label.foreground"));
+            }
+            // For Linux
+            if (System.getProperty("os.name").toLowerCase().contains("linux")) {
+                UIManager.put("gtk.title.background", UIManager.get("Panel.background"));
+                UIManager.put("gtk.title.foreground", UIManager.get("Label.foreground"));
+            }
+        }
     }
 }
 

@@ -16,9 +16,10 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static FileBrowser.UIHelpers.getSystemIcon;
 
 //import java.util.List;
 /**
@@ -229,10 +230,17 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
         //new JButton, which image is located in the src-folder
 
         //---
-        JButton chooseFolder = new JButton(new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/folder.png"))));
-        JButton sortButton = new JButton(new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/sort-s.png"))));
-        JButton undoChanges = new JButton(new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/undo.png"))));
+        JButton chooseFolder = new JButton();
+        chooseFolder.setIcon(getSystemIcon("folder"));
+        chooseFolder.setToolTipText("Select Folder");
 
+        JButton sortButton = new JButton();
+        sortButton.setIcon(getSystemIcon("sort"));
+        sortButton.setToolTipText("Sort Items");
+
+        JButton undoChanges = new JButton();
+        undoChanges.setIcon(getSystemIcon("undo"));
+        undoChanges.setToolTipText("Undo Changes");
         chooseFolder.setBackground(UIConstants.BACKGROUND_DARK);
         chooseFolder.setForeground(UIConstants.TEXT_LIGHT
 );
@@ -264,9 +272,6 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
         treeScrollPane.getViewport().add(fileTree);
         c.add(treeScrollPane, BorderLayout.WEST);
     }
-
-    /**
-
 
     /**
      * calls the sort() function of FileBrowser.SortImages class. uses swingWorker to do it in background.
@@ -486,246 +491,3 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
     }
 }
 
-
-/*private Image createRawThumbnail(File rawFile) {
-    // Check if the file exists and is readable
-    if (rawFile == null || !rawFile.exists() || !rawFile.canRead()) {
-        return getDefaultFileIcon();
-    }
-
-    // Try to use ImageIO first as it's more reliable for basic formats
-    try {
-        BufferedImage image = ImageIO.read(rawFile);
-        if (image != null) {
-            return scaleImage(image);
-        }
-    } catch (Exception e) {
-        LOGGER.log(Level.FINE, "ImageIO failed to read " + rawFile.getName(), e);
-    }
-
-    // If ImageIO fails, try with Apache Commons Imaging if available
-    try {
-        // Check if Imaging class is available
-        Class.forName("org.apache.commons.imaging.Imaging");
-
-        // Try to read the image directly
-        try {
-            BufferedImage image = Imaging.getBufferedImage(rawFile);
-            if (image != null) {
-                return scaleImage(image);
-            }
-        } catch (Exception e) {
-            LOGGER.log(Level.FINE, "Direct Imaging read failed for " + rawFile.getName(), e);
-        }
-
-        // Try to extract thumbnail from metadata
-        try {
-            ImageMetadata metadata = Imaging.getMetadata(rawFile);
-            if (metadata instanceof TiffImageMetadata) {
-                TiffImageMetadata tiffMetadata = (TiffImageMetadata) metadata;
-
-                // Try to get the thumbnail from the EXIF directory
-                TiffDirectory thumbnailDir = tiffMetadata.findDirectory(TiffDirectoryType.EXIF_DIRECTORY_SUB_IFD.directoryType);
-                if (thumbnailDir != null) {
-                    Object offsetObj = thumbnailDir.getFieldValue(TiffTagConstants.TIFF_TAG_JPEG_INTERCHANGE_FORMAT);
-                    if (offsetObj != null) {
-                        int offset = ((Number) offsetObj).intValue();
-                        Object lengthObj = thumbnailDir.getFieldValue(TiffTagConstants.TIFF_TAG_JPEG_INTERCHANGE_FORMAT_LENGTH);
-                        if (lengthObj != null) {
-                            int length = ((Number) lengthObj).intValue();
-                            try (RandomAccessFile raf = new RandomAccessFile(rawFile, "r")) {
-                                byte[] thumbnailData = new byte[length];
-                                raf.seek(offset);
-                                int bytesRead = raf.read(thumbnailData);
-                                if (bytesRead > 0) {
-                                    return ImageIO.read(new ByteArrayInputStream(thumbnailData));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.log(Level.FINE, "Failed to extract thumbnail from metadata: " + e.getMessage());
-        }
-    } catch (ClassNotFoundException e) {
-        LOGGER.log(Level.INFO, "Apache Commons Imaging not found. Limited RAW file support available.");
-    } catch (Exception e) {
-        LOGGER.log(Level.WARNING, "Error initializing image processing: " + e.getMessage(), e);
-    }
-
-    // Return default icon if all else fails
-    return getDefaultFileIcon();
-}
-*/
-
-
-// Start loading thumbnails in the background
-//        new Thread(() -> {
-//            // Process all files and create thumbnails
-//            for (int i = 0; i < content.size(); i++) {
-//                final int index = i;
-//                try {
-//                    Image thumbnail;
-//                    if (content.get(i).isDirectory()) {
-//                        thumbnail = ImageIO.read(Objects.requireNonNull(getClass().getResource("folder.png")));
-//                    } else if (content.get(i).getName().toLowerCase().matches(".*\\.(jpg|jpeg|png)$")) {
-//                        thumbnail = new FileBrowser.Foto(content.get(i).getAbsolutePath()).getThumbnail();
-//                    } else if (content.get(i).getName().toLowerCase().endsWith(".cr2") ||
-//                              content.get(i).getName().toLowerCase().endsWith(".nef") ||
-//                              content.get(i).getName().toLowerCase().endsWith(".arw") ||
-//                              content.get(i).getName().toLowerCase().matches(".*\\.(raf|dng|crw|cr3|raw|rw2|pef|srf|sr2|x3f)$")) {
-//                        thumbnail = createRawThumbnail(content.get(i));
-//                    } else {
-//                        // Default icon for unsupported file types
-//                        try {
-//                            thumbnail = ImageIO.read(Objects.requireNonNull(getClass().getResource("file.png")));
-//                        } catch (Exception e) {
-//                            thumbnail = null;
-//                        }
-//                    }
-//
-//                    // Update the UI on the Event Dispatch Thread
-//                    Image finalThumbnail = thumbnail;
-//                    SwingUtilities.invokeLater(() -> {
-//                        if (thumbnails.size() > index) {
-//                            thumbnails.set(index, finalThumbnail);
-//                        } else {
-//                            // If the index doesn't exist yet, fill up to that index with nulls
-//                            while (thumbnails.size() < index) {
-//                                thumbnails.add(null);
-//                            }
-//                            thumbnails.add(finalThumbnail);
-//                        }
-//                        // Trigger a repaint of just this cell
-//                        listContent.repaint(listContent.getCellBounds(index, index));
-//                    });
-//
-//                    // Small delay to prevent UI freezing
-//                    Thread.sleep(50);
-//                } catch (Exception e) {
-//                    LOGGER.log(Level.SEVERE, "Error creating thumbnail for: " + content.get(i).getAbsolutePath(), e);
-//                }
-//            }
-//        }).start();
-
-    /*
-
-    */
-
-/*
-  // creates a thread to run progress in background
-  private class MyThread extends Thread {
-      /**
-       * creates MultiThreads to create thumbnails.
-       * To prevent out of memory exceptions, let the threads sleep for 300/600 millisek.
-       */
-/*
-MyThread() {
-    super();
-}
-
-
-/**
- * @param fileArrayList ArrayList<File> with contents of the folder
- */
-/*
-void run(ArrayList<File> fileArrayList) {
-    // Prepare to execute and store the Futures
-    int threadNum = fileArrayList.size();
-    try (ExecutorService executor = Executors.newFixedThreadPool(threadNum)) {
-        //arrayList for created values in future task
-        ArrayList<FutureTask<Integer>> taskList = new ArrayList<>();
-
-        //to prevent out of memory exception, let the threads sleep for 300/600ms
-        for (int t = 0; t < threadNum; t++) {
-            int finalT = t;
-
-            if ((finalT % 2) == 0) {
-                try {
-                    Thread.sleep(200);
-                } catch (InterruptedException e) {
-                    LOGGER.log(Level.SEVERE, "Error message", e);
-                }
-            } else {
-                try {
-                    Thread.sleep(300);
-                } catch (InterruptedException e) {
-                    LOGGER.log(Level.SEVERE, "Error message", e);
-                }
-
-            }
-
-            // Start thread for the first half of the numbers
-            FutureTask<Integer> futureTask = new FutureTask<>(new Callable<Integer>() {
-                @Override
-                public Integer call() {
-                    // for (int i = 0; i < content.size(); i++) {
-                    //if file is directory, an image of a directory will be pushed in the array of thumbnails on the same position as the file is
-                    if (fileArrayList.get(finalT).isDirectory()) {
-                        try {
-                            thumbnails.add(ImageIO.read(Objects.requireNonNull(getClass().getResource("folder.png"))));//new ImageIcon(getClass().getResource("folder.png")));
-                            //System.out.println("added folder thumb");
-
-                        } catch (IOException e) {
-                            LOGGER.log(Level.SEVERE, "Error loading folder icon", e);
-                        }
-                    }
-                    //if file is an image (jpg) or movie (mp4) it creates a FileBrowser.Foto, gets the thumbnail of it an pushes it into the array of thumbnails
-                    //clas FileBrowser.Foto will check if it's a jpg or mp4 and will return a scaled instance or an icon for movies.
-                    else {
-                        if (fileArrayList.get(finalT).getName().toLowerCase().endsWith("jpg")
-                                || fileArrayList.get(finalT).getName().toLowerCase().endsWith("jpeg")
-                                || fileArrayList.get(finalT).getName().toLowerCase().endsWith("png")) {
-                            try {
-                                thumbnails.add(new FileBrowser.Foto(fileArrayList.get(finalT).getAbsolutePath()).getThumbnail());
-                                //System.out.println("added photo thumb");
-                            } catch (Exception e) {
-                                LOGGER.log(Level.SEVERE, "Error creating thumbnail for: " + fileArrayList.get(finalT).getAbsolutePath(), e);
-                            }
-                        } else if (fileArrayList.get(finalT).getName().toLowerCase().endsWith("mp4")) {
-                            try {
-                                thumbnails.add(ImageIO.read(Objects.requireNonNull(getClass().getResource("assets/video.png"))));
-                                //System.out.println("added video thumb");
-
-                            } catch (IOException e) {
-                                LOGGER.log(Level.SEVERE, "Error message", e);
-                            }
-                        } else if (fileArrayList.get(finalT).getName().toLowerCase().endsWith("mpeg4")) {
-                            try {
-                                thumbnails.add(ImageIO.read(Objects.requireNonNull(getClass().getResource("assets/video.png"))));
-                                //System.out.println("added video thumb");
-
-                            } catch (IOException e) {
-                                LOGGER.log(Level.SEVERE, "Error message", e);
-                            }
-                        } else {
-                            Icon sysIco = FileSystemView.getFileSystemView().getSystemIcon(fileArrayList.get(finalT));
-                            thumbnails.add(((ImageIcon) sysIco).getImage());
-                            //.out.println("added sysIcon thumb");
-
-                        }
-                    }
-                    return 0;
-                }
-            });
-            taskList.add(futureTask);
-            executor.execute(futureTask);
-        }
-
-        // Wait until all results are available and combine them at the same time
-        int amount = 0;
-        for (int j = 0; j < threadNum; j++) {
-            FutureTask<Integer> futureTask = taskList.get(j);
-            try {
-                amount += futureTask.get();
-            } catch (InterruptedException | ExecutionException e) {
-                LOGGER.log(Level.SEVERE, "Error message", e);
-            }
-        }
-        executor.shutdown();
-    }
-}
-    }
-
-            */
