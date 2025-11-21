@@ -1,11 +1,12 @@
-import FileBrowser.MainFrame;
-import FileBrowser.SortImages;
+import FileBrowser.controller.SortImages;
+import FileBrowser.ui.MainFrame;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.logging.Logger;
 
-import static FileBrowser.UIConstants.TESTING;
+import static FileBrowser.util.UIConstants.TESTING;
+
 
 /**
  * Sets up Look & feel

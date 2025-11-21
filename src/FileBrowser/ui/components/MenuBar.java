@@ -1,4 +1,6 @@
-package FileBrowser;
+package FileBrowser.ui.components;
+
+import FileBrowser.util.UIConstants;
 
 import javax.swing.*;
 import java.awt.event.ActionListener;
