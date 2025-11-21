@@ -1,4 +1,6 @@
-package FileBrowser;
+package FileBrowser.thumbs;
+
+import FileBrowser.FileOperations;
 
 import javax.imageio.ImageIO;
 import java.awt.Image;

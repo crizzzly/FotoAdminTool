@@ -1,12 +1,13 @@
-package FileBrowser;
+package FileBrowser.thumbs;
 
+
+import FileBrowser.FileOperations;
+import FileBrowser.UIConstants;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Objects;
 
 public class ThumbnailCellRenderer extends JPanel implements ListCellRenderer<Object> {
     private final JLabel iconLabel = new JLabel("", JLabel.CENTER);

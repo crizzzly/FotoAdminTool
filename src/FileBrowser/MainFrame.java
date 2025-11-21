@@ -1,7 +1,10 @@
 package FileBrowser;//package Gui;
 
-import FileBrowser.UIComponents.*;
+import FileBrowser.FileTree.FileTree;
+import FileBrowser.thumbs.ThumbnailCellRenderer;
+import FileBrowser.thumbs.ThumbnailLoader;
 import ImageViewer.ImageViewer;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -22,7 +25,6 @@ import java.util.logging.Logger;
 
 import static FileBrowser.SortImages.undoChanges;
 import static FileBrowser.UIComponents.createToolbar;
-import static FileBrowser.UIHelpers.getSystemIcon;
 
 //import java.util.List;
 /**
@@ -88,25 +90,7 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
     }
 
 
-    /*
-    private void buildProgressBar() {
-        progressPanel = new JPanel();
-        progressPanel.removeAll();
-        JLabel progress;
 
-        if(content.size() != 0) {
-             progress = new JLabel(loadCount + " images of " + content.size() + " loaded.");
-        }
-        progressPanel.add(progress);
-        //}
-        c.add(progressPanel, BorderLayout.SOUTH);
-        pack();
-        progressPanel.validate();
-        progressPanel.updateUI();
-        progressPanel.updateUI();
-
-    }
-    */
 
     /**
      * build the screen in the middle where all files and directories are shown. perhabs sooon with thumbnail!!
@@ -182,52 +166,14 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
             }
         });
 
-
         JScrollPane scrollPane = createContentScrollPane();
         containerPane.add(scrollPane, BorderLayout.CENTER);
         pack();
     }
 
-    private void buildMenuBar() {
-        /**
-         * builds the menuBar
-         * made by Jana Seemann
-         */
-        // creates menuBar
-        JMenuBar menu = new JMenuBar();
-        // Menü wird hinzugefügt
-        menu.add(new JMenu("Datei"));
 
-        JButton bearbeiten = new JButton("Bearbeiten");
-        JButton hilfe = new JButton("Hilfe");
-
-
-        bearbeiten.setBackground(UIConstants.PANEL_BACKGROUND);
-        bearbeiten.setForeground(UIConstants.TEXT_LIGHT
-);
-
-        hilfe.setBackground(UIConstants.PANEL_BACKGROUND);
-        hilfe.setForeground(UIConstants.TEXT_LIGHT
-);
-
-        bearbeiten.setActionCommand("Bearbeiten");
-        hilfe.setActionCommand("Hilfe");
-
-        bearbeiten.addActionListener(this);
-        hilfe.addActionListener(this);
-
-        //bar.add(bearbeiten);
-        //bar.add(hilfe);
-    }
-
-    /**
-     * Builds a toolbar that is not movable. if you want it movable, use setFloatable(true)
-     * adds the toolbar to the JFrame on top of the frame
-     * creates a button to set up the location of the folder you want to sort.
-     */
-
-    //Creates a JScrollPane, creates a new FileBrowser.FileTree instance with given directory saved in sourceDir
-    //adds the FileBrowser.FileTree to the treeScrollPane on left side
+    //Creates a JScrollPane, creates a new FileBrowser.FileTree.FileTree instance with given directory saved in sourceDir
+    //adds the FileBrowser.FileTree.FileTree to the treeScrollPane on left side
     private void buildFileTree() {
         JScrollPane treeScrollPane = new JScrollPane();
         fileTree = new FileTree(sourceDir, this);
@@ -259,7 +205,7 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
      *
      * @param e ActionEvent given by the instance which calls the actionListener
      */
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(@NotNull ActionEvent e) {
         //obj saves the class of the instance which called actionPerformed
         Object obj = e.getSource();
         //reads the string added to the instance to specify what action will be performed
@@ -282,16 +228,16 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
                 fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
                     //if a valid choice is made, the selected folder of the filechooser will be saved in sourceDir
-                    fileTree.tree.clearSelection();
-                    TreePath trPth = fileTree.tree.getNextMatch(selected.getPath(), 0, Position.Bias.Forward);
-                    fileTree.tree.collapsePath(trPth );
+                    fileTree.clearSelection();
+                    TreePath trPth = fileTree.getNextMatch(selected.getPath(), 0, Position.Bias.Forward);
+                    fileTree.collapsePath(trPth );
                     selected = fc.getSelectedFile();
                     // sourcheDirSet = true;
                     //show the new content in the treeScrollPane
 
                     fileTree.setSelectedTreeNode(selected.getAbsolutePath());
-                    trPth = fileTree.tree.getNextMatch(selected.getPath(), 0, Position.Bias.Forward);
-                    fileTree.tree.expandPath(trPth);
+                    trPth = fileTree.getNextMatch(selected.getPath(), 0, Position.Bias.Forward);
+                    fileTree.expandPath(trPth);
                     buildScrollPane();
 
                 }
@@ -399,15 +345,7 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
            }
     }
 
-    private static class MyFileFilter extends FileFilter {
-        public boolean accept(File file) {
-            return file.isDirectory();
-        }
 
-        public String getDescription() {
-            return "directory";
-        }
-    }
     private void loadThumbnailsForContent() {
         if (content == null || content.isEmpty()) return;
 
@@ -434,7 +372,7 @@ public class MainFrame extends JFrame implements ActionListener, PropertyChangeL
         }
     }
 
-    private JScrollPane createContentScrollPane() {
+    private @NotNull JScrollPane createContentScrollPane() {
         JScrollPane scrollPane = new JScrollPane(listContent);
         scrollPane.setLayout(new ScrollPaneLayout());
         //---- change appearance of scrollPane
