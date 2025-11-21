@@ -1,3 +1,5 @@
+package FileBrowser;
+
 import org.imgscalr.Scalr;
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -41,7 +43,7 @@ public class Foto {
     }
 
     /**
-     * constructor of class Foto. saves picture/video in File file, saves parent directory in File dir
+     * constructor of class FileBrowser.Foto. saves picture/video in File file, saves parent directory in File dir
      * calls method to create thumbnail
      *
      * @param filename of the foto/video (String)
@@ -108,7 +110,7 @@ public class Foto {
 
     /**
      * returns the foto as image file
-     * @return (Image) Foto
+     * @return (Image) FileBrowser.Foto
      */
     public Image getImage()  {
         return  (image != null ? getDefaultToolkit().getImage(image.getAccessibleContext().toString()) : null);}
@@ -116,7 +118,7 @@ public class Foto {
 
 
     /**
-     * prints metaData of Foto in terminal
+     * prints metaData of FileBrowser.Foto in terminal
      */
     public void showMetadata() {
         BasicFileAttributes atr;

@@ -1,5 +1,5 @@
 # FotoAdminTool-
-Foto Administration Tool
+FileBrowser.Foto Administration Tool
 
 HfG Schwäbisch Gmünd Internet of Things - Designing connected devices
 
